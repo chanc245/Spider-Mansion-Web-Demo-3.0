@@ -1,0 +1,20 @@
+{
+  "name": "spider-mansion-web-demo-2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "1": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "chanc245",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.1",
+    "nodemon": "^3.0.2",
+    "openai": "^4.24.1"
+  }
+}

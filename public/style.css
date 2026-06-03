@@ -1,0 +1,58 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* background-color: #000; */
+}
+
+html {
+  background: radial-gradient(#aeaeae 3px, transparent 4px),
+    radial-gradient(#aeaeae 3px, transparent 4px),
+    linear-gradient(rgb(50, 50, 50) 4px, transparent 0),
+    linear-gradient(
+      45deg,
+      transparent 74px,
+      transparent 75px,
+      #a4a4a4 75px,
+      #a4a4a4 76px,
+      transparent 77px,
+      transparent 109px
+    ),
+    linear-gradient(
+      -45deg,
+      transparent 75px,
+      transparent 76px,
+      #a4a4a4 76px,
+      #a4a4a4 77px,
+      transparent 78px,
+      transparent 109px
+    ),
+    rgb(50, 50, 50);
+  background-size: 109px 109px, 109px 109px, 100% 6px, 109px 109px, 109px 109px;
+  background-position: 54px 55px, 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+}
+
+#canvas-container {
+  position: relative; /* lets inputs be positioned relative to canvas */
+}
+
+.notebook-input {
+  font-family: "Bradley Hand", cursive;
+  font-size: 20px;
+  padding: 10px 10px;
+  border: 0px solid #000;
+  border-radius: 5px;
+  background: #ffffff76;
+  color: #000000;
+
+  box-sizing: border-box;
+}
+
+.notebook-input::placeholder {
+  color: #777;
+  font-style: italic;
+}
