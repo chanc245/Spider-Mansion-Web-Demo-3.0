@@ -57,6 +57,9 @@ class Dialog {
     });
     this.arrow = new Blinker({ periodMs: opts.arrowBlinkPeriodMs ?? 900 });
 
+    // Wrap cache — avoid re-wrapping the same text every draw frame
+    this._wrapCache = new Map(); // text -> string[]
+
     // Preserve end BG
     this.preserveBgOnEnd = true;
     this.holdBgAfterFinishMs = opts.holdBgAfterFinishMs ?? 150;
@@ -195,7 +198,11 @@ class Dialog {
       textAlign(LEFT, TOP);
       noStroke();
       fill(0, 0, 0, uiA);
-      const lines = this._wrap(body, tr.w);
+      const wrapKey = body + "|" + tr.w;
+      if (!this._wrapCache.has(wrapKey)) {
+        this._wrapCache.set(wrapKey, this._wrap(body, tr.w));
+      }
+      const lines = this._wrapCache.get(wrapKey);
       const maxLines = Math.max(1, Math.floor(tr.h / this.leading));
       for (let i = 0; i < Math.min(lines.length, maxLines); i++) {
         text(
@@ -326,6 +333,7 @@ class Dialog {
     }
 
     // Typewriter
+    this._wrapCache.clear(); // new line = new text, clear wrap cache
     this.typer.start(line.text || "");
     this.arrow.setEnabled(!this.typer.typing);
   }
@@ -392,6 +400,7 @@ class Dialog {
   }
 
   _wrap(textStr, maxWidth) {
+    // Set font state once per wrap call, not once per word iteration
     if (this.font) textFont(this.font);
     textSize(this.textSize);
     const words = String(textStr || "").split(/\s+/);

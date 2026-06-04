@@ -13,12 +13,8 @@ class Day0QuizLog {
     this.anchorX = 0;
     this.anchorY = 0;
 
-    this.notebookContent = [
-      "Day 0 - Question:",
-      "I built a house, but the guests didn’t realize it was there and accidentally entered. Afterward, the guests, who were trapped in the house, became my dinner.",
-      "Who am I?",
-      "*********** QnA Log ***********",
-    ];
+    // Populated in setup() from EVA_CONFIGS so it stays in sync with the puzzle
+    this.notebookContent = [];
     this.userFont = null;
     this.fontSize = 20;
     this.leading = 30;
@@ -88,6 +84,14 @@ class Day0QuizLog {
       icon: "--",
     });
     this.inputLimit = this.eva.maxQuestions; // sync limit from config
+
+    // Populate notebook header from config so it stays in sync with the puzzle
+    this.notebookContent = [
+      "Day 0 - Question:",
+      this.eva.setup,
+      "Who am I?",
+      "*********** QnA Log ***********",
+    ];
     // Input
     this.input = createInput("");
     this.input.attribute("placeholder", this._placeholderText());
@@ -103,7 +107,10 @@ class Day0QuizLog {
       console.log(`[USER INPUT] Q${this.questionCount + 1}: ${v}`);
 
       if (this.questionCount >= this.inputLimit) {
-        this.input.attribute("placeholder", "Q limit reached (20).");
+        this.input.attribute(
+          "placeholder",
+          `Q limit reached (${this.inputLimit}).`,
+        );
         this.input.value("");
         this.input.hide();
         return;
@@ -190,7 +197,7 @@ class Day0QuizLog {
     if (this.fading) {
       const t = (millis() - this.fadeStart) / this.fadeDurCurrent;
       const clamped = constrain(t, 0, 1);
-      const eased = this._easeInOutCubic(clamped);
+      const eased = Tween.easeInOutCubic(clamped);
       this.alpha = lerp(this.fadeFrom, this.fadeTo, eased);
       if (clamped >= 1) {
         this.fading = false;
@@ -241,7 +248,10 @@ class Day0QuizLog {
     // exhaustion if we've just hit the limit and haven't solved yet
     if (this.questionCount >= this.inputLimit && !this._solved) {
       this._ending = true;
-      this.input.attribute("placeholder", "Q limit reached (20).");
+      this.input.attribute(
+        "placeholder",
+        `Q limit reached (${this.inputLimit}).`,
+      );
       this.input.hide();
       await this._playEvaVoice(reply); // wait for voice to finish
       if (typeof this.onExhausted === "function") this.onExhausted();
@@ -561,10 +571,6 @@ class Day0QuizLog {
         resolve();
       }
     });
-  }
-
-  _easeInOutCubic(x) {
-    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
   }
 }
 window.Day0QuizLog = Day0QuizLog;

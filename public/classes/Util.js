@@ -27,7 +27,7 @@ class AssetCache {
       (err) => {
         console.warn("Failed to load:", path, err);
         cb?.(null);
-      }
+      },
     );
   }
 }
@@ -106,15 +106,16 @@ class CrossfadeLayer {
 
   /** Render crossfade; `layerA` lets parent decouple BG from UI alpha */
   render(layerA = 255) {
+    const aFactor = layerA / 255;
     if (this.prev && (this._fade.active || this.alpha < 255)) {
       push();
-      tint(255, (255 - this.alpha) * (layerA / 255));
+      tint(255, (255 - this.alpha) * aFactor);
       this.drawFn(this.prev);
       pop();
     }
     if (this.cur) {
       push();
-      tint(255, this.alpha * (layerA / 255));
+      tint(255, this.alpha * aFactor);
       this.drawFn(this.cur);
       pop();
     }
