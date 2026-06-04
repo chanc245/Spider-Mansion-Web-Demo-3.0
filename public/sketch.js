@@ -98,56 +98,48 @@ function setup() {
 
   // GOOD path
   logView.onSolved = () => {
-    setTimeout(() => {
-      showQuizAfterDialog = false;
+    // Voice has already finished playing before this fires — transition immediately.
+    showQuizAfterDialog = false;
+    logView.setActive(false, "page");
 
-      logView.setActive(false, "page");
-
-      const startGoodVN = () => {
-        quiz.onScrollEnd = null;
-        dialog.setScript(vnScript_postQuiz_Good);
-
-        dialog.onFinish = () => {
-          appState = "END";
-        };
-
-        appState = "VN";
-        dialog.start();
+    const startGoodVN = () => {
+      quiz.onScrollEnd = null;
+      dialog.setScript(vnScript_postQuiz_Good);
+      dialog.onFinish = () => {
+        appState = "END";
       };
+      appState = "VN";
+      dialog.start();
+    };
 
-      quiz.onScrollEnd = (state /* false */, yOffset /* ~0 */, visible) => {
-        if (state === false) startGoodVN();
-      };
+    quiz.onScrollEnd = (state, yOffset, visible) => {
+      if (state === false) startGoodVN();
+    };
 
-      // Trigger the scroll (true -> false)
-      quiz.setQuizState(false);
-    }, QUIZ_AUTO_RETURN_DELAY_MS);
+    quiz.setQuizState(false);
   };
 
   // BAD path
   logView.onExhausted = () => {
-    setTimeout(() => {
-      showQuizAfterDialog = false;
-      logView.setActive(false, "page");
+    // Voice has already finished playing before this fires — transition immediately.
+    showQuizAfterDialog = false;
+    logView.setActive(false, "page");
 
-      const startBadVN = () => {
-        quiz.onScrollEnd = null;
-        dialog.setScript(vnScript_postQuiz_Bad);
-
-        dialog.onFinish = () => {
-          appState = "END";
-        };
-
-        appState = "VN";
-        dialog.start();
+    const startBadVN = () => {
+      quiz.onScrollEnd = null;
+      dialog.setScript(vnScript_postQuiz_Bad);
+      dialog.onFinish = () => {
+        appState = "END";
       };
+      appState = "VN";
+      dialog.start();
+    };
 
-      quiz.onScrollEnd = (state, yOffset, visible) => {
-        if (state === false) startBadVN();
-      };
+    quiz.onScrollEnd = (state, yOffset, visible) => {
+      if (state === false) startBadVN();
+    };
 
-      quiz.setQuizState(false);
-    }, QUIZ_AUTO_RETURN_DELAY_MS);
+    quiz.setQuizState(false);
   };
 
   _prevNotebookReady = quiz.isNotebookShown();

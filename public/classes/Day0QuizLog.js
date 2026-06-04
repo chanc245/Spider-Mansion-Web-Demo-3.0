@@ -135,8 +135,12 @@ class Day0QuizLog {
         this.notebookContent[idx] =
           `${this.eva.icon}${this.eva.prefix}: ${reply}`;
         this.notebookContent.push("***");
-        this._playEvaVoice(reply); // speak the reply via ElevenLabs
-        this._afterAIReply(reply);
+        // For ending replies (correct/exhausted), _afterAIReply awaits the voice itself.
+        // For normal replies, fire-and-forget so the game doesn't block.
+        this._afterAIReply(reply)
+          .then(() => {})
+          .catch(() => {});
+        if (!this._ending) this._playEvaVoice(reply);
       } catch (err) {
         this.notebookContent[idx] = `${this.eva.icon}${
           this.eva.prefix
@@ -222,7 +226,7 @@ class Day0QuizLog {
 
   // ---------- internal ----------
 
-  _afterAIReply(reply) {
+  async _afterAIReply(reply) {
     const text = String(reply || "")
       .trim()
       .toLowerCase();
@@ -232,6 +236,7 @@ class Day0QuizLog {
       this._solved = true;
       this._ending = true;
       this.input.hide();
+      await this._playEvaVoice(reply); // wait for voice to finish
       if (typeof this.onSolved === "function") this.onSolved();
       return;
     }
@@ -241,6 +246,7 @@ class Day0QuizLog {
       this._ending = true;
       this.input.attribute("placeholder", "Q limit reached (20).");
       this.input.hide();
+      await this._playEvaVoice(reply); // wait for voice to finish
       if (typeof this.onExhausted === "function") this.onExhausted();
     }
   }
@@ -513,40 +519,51 @@ class Day0QuizLog {
 
   // Fetch TTS audio from the server and play it.
   // Uses a blob URL so nothing is written to disk.
-  // Silently fails if the server is unavailable — game logic is unaffected.
+  // Returns a promise that resolves when the audio finishes playing.
+  // Resolves immediately (silently) if TTS is unavailable — game logic is unaffected.
   async _playEvaVoice(text) {
-    try {
-      // Stop any currently playing Eva voice first
-      if (this._evaVoiceEl) {
-        this._evaVoiceEl.pause();
-        this._evaVoiceEl = null;
+    return new Promise(async (resolve) => {
+      try {
+        // Stop any currently playing Eva voice first
+        if (this._evaVoiceEl) {
+          this._evaVoiceEl.pause();
+          this._evaVoiceEl = null;
+        }
+
+        const res = await fetch("/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!res.ok) {
+          console.warn("TTS request failed:", res.status);
+          resolve();
+          return;
+        }
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+
+        const cleanup = () => {
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+
+        audio.addEventListener("ended", cleanup);
+        audio.addEventListener("error", cleanup);
+
+        audio.volume = Math.max(0, Math.min(1, this.evaVoiceVolume));
+        this._evaVoiceEl = audio;
+        audio.play().catch(() => {
+          resolve();
+        });
+      } catch (err) {
+        console.warn("TTS error (non-fatal):", err);
+        resolve();
       }
-
-      const res = await fetch("/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!res.ok) {
-        console.warn("TTS request failed:", res.status);
-        return;
-      }
-
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-
-      // Clean up the blob URL once playback ends
-      audio.addEventListener("ended", () => URL.revokeObjectURL(url));
-      audio.addEventListener("error", () => URL.revokeObjectURL(url));
-
-      audio.volume = Math.max(0, Math.min(1, this.evaVoiceVolume));
-      this._evaVoiceEl = audio;
-      audio.play().catch(() => {});
-    } catch (err) {
-      console.warn("TTS error (non-fatal):", err);
-    }
+    });
   }
 
   _easeInOutCubic(x) {
