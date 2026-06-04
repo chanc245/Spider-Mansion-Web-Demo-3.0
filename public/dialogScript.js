@@ -3,11 +3,13 @@ const vnScript_postQuiz_Good = [
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "For a first-time player, you’re pretty good at this!",
+    diaAudio: "d0_dia_g01.mp3",
   },
   {
-    charName: "",
+    charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "I want you to play with me every day! It might even relate to what happened that day, so make sure you get used to this house!",
+    diaAudio: "d0_dia_g02.mp3",
   },
   {
     charName: " ",
@@ -22,12 +24,14 @@ const vnScript_postQuiz_Good = [
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "Your room on the first floor. I’ll see you tomorrow!",
+    text: "Your room is on the first floor. I’ll see you tomorrow!",
+    diaAudio: "d0_dia_g03.mp3",
   },
   {
     charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    bg: "assets/bg/bg_BlackOut.png",
     text: "She gave me a small wave before closing the door to her room.",
+    soundEffect: "assets/audio/dia_door.mp3",
   },
   {
     charName: "Me",
