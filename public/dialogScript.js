@@ -105,18 +105,21 @@ const vnScript = [
     charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "There you are! I’ve been waiting for you.",
+    diaAudio: "d0_dia_01.mp3",
   },
   {
     charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Mhm. I knew you’d come.",
+    diaAudio: "d0_dia_02.mp3",
   },
   {
     charName: "Eva",
     charCG: "assets/charImg/char_ara_blank.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "So, my new nanny.... Are you ready to play with me?",
+    diaAudio: "d0_dia_03.mp3",
   },
   {
     charName: "Eva",
@@ -124,58 +127,69 @@ const vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Let’s.... play a game.",
     soundEffect: "assets/audio/bg_ara.mp3",
+    diaAudio: "d0_dia_04.mp3",
   },
   {
     charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Don’t worry... I’ll teach you how to play it!",
+    diaAudio: "d0_dia_05.mp3",
   },
   // =====Explaining Lateral Thinking Puzzle=====
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Okay, here’s how it works! I’ll give you a scenario, and your job is to figure out the puzzle by asking me questions!",
+    diaAudio: "d0_dia_06.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Buuut! There’s a catch! I can only answer with YES, NO, or DOESN’T RELATE!",
+    diaAudio: "d0_dia_07.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "…Oh, but since this is your first time, I might give you a little nudge here and there.",
+    diaAudio: "d0_dia_08.mp3",
   },
   {
     charName: "",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "I barely had time to process all these rules for a game I’d never even heard of, and before I could ask another question—",
+    diaAudio: null,
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Ah! Let’s just start! You’ll get the hang of it while we play!",
+    diaAudio: "d0_dia_09.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Tonight’s question isssss-----",
+    diaAudio: "d0_dia_10.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "I built a house, but the guests didn’t realize it was there and accidentally entered. Afterward, the guests, who were trapped in the house, became my dinner. Who am I?",
+    diaAudio: "d0_dia_11.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "That’s the question! You get 20 questions to ask me!",
+    diaAudio: "d0_dia_12.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "I see you have a notebook with you! Good habit! Now let's begin-------!",
+    diaAudio: "d0_dia_13.mp3",
   },
 ];
 

@@ -78,6 +78,15 @@ class Dialog {
     // SFX
     this.clickSfxPath = opts.clickSfxPath ?? "assets/audio/ui_clickDia.mp3";
     this.clickSfxVolume = opts.clickSfxVolume ?? 1.0;
+
+    // Dialogue voiceover — its own private Audio element, fully isolated
+    // from AudioManager so it never conflicts with soundEffect or BGM.
+    this._diaAudioEl = null; // current HTMLAudioElement
+    this._diaAudioPath = null; // path of the loaded element (for reuse)
+    this.diaAudioVolume = opts.diaAudioVolume ?? 1.0;
+    this.diaAudioDir = opts.diaAudioDir
+      ? opts.diaAudioDir.replace(/\/?$/, "/") // ensure trailing slash
+      : "";
   }
 
   preload() {
@@ -127,6 +136,7 @@ class Dialog {
       this._fadingOut = false;
       this._running = false;
       this._finished = true;
+      this._stopDiaAudio(); // clean up any lingering voiceover
       this.onFinish?.();
     }
   }
@@ -198,7 +208,7 @@ class Dialog {
         text(
           lines[i],
           this.x + tr.ox + 6,
-          this.y + tr.oy + i * this.leading + 5
+          this.y + tr.oy + i * this.leading + 5,
         );
       }
       pop();
@@ -226,10 +236,10 @@ class Dialog {
 
     // finish typing first (user click reveals remainder)
     if (this.typer.typing) {
-      // play click
       if (this.audio && this.clickSfxPath) {
         this.audio.play(this.clickSfxPath, { volume: this.clickSfxVolume });
       }
+      this._stopDiaAudio(); // stop voiceover when player skips ahead
       this.typer.revealAll();
       this.arrow.reset();
       return;
@@ -239,6 +249,7 @@ class Dialog {
     if (this.audio && this.clickSfxPath) {
       this.audio.play(this.clickSfxPath, { volume: this.clickSfxVolume });
     }
+    this._stopDiaAudio(); // stop voiceover before starting the next line's
 
     // advance
     this.index++;
@@ -278,9 +289,12 @@ class Dialog {
     // BG
     this.bg.set(line.bg || null);
 
-    // SFX
+    // SFX (soundEffect / stopSound go through AudioManager — untouched)
     if (line.stopSound) this._stopSoundLine(line);
     if (line.soundEffect && this.audio) this.audio.play(line.soundEffect);
+
+    // Dialogue voiceover — private channel, no interference with the above
+    this._playDiaAudio(line.diaAudio ?? null);
 
     // CG policy: first CG fades in; CG->CG instant swap; CG->none fade out
     const hadCG = !!this.cg.curPath;
@@ -323,6 +337,34 @@ class Dialog {
     this.arrow.setEnabled(!this.typer.typing);
   }
 
+  // Play a dialogue voiceover on the private channel.
+  // Stops any previously playing voiceover first.
+  // Skipped silently if path is null/undefined/empty.
+  _playDiaAudio(path) {
+    this._stopDiaAudio();
+    if (!path) return;
+    const fullPath = this.diaAudioDir + path;
+    try {
+      // Reuse the element if it's the same file, otherwise create a new one
+      if (this._diaAudioPath !== fullPath) {
+        this._diaAudioEl = new Audio(fullPath);
+        this._diaAudioPath = fullPath;
+      }
+      this._diaAudioEl.currentTime = 0;
+      this._diaAudioEl.volume = Math.max(0, Math.min(1, this.diaAudioVolume));
+      this._diaAudioEl.play().catch(() => {}); // swallow autoplay policy errors
+    } catch (_) {}
+  }
+
+  // Stop the current dialogue voiceover immediately.
+  _stopDiaAudio() {
+    if (!this._diaAudioEl) return;
+    try {
+      this._diaAudioEl.pause();
+      this._diaAudioEl.currentTime = 0;
+    } catch (_) {}
+  }
+
   _stopSoundLine(line) {
     const raw = line.stopSound;
     const parsed =
@@ -338,8 +380,8 @@ class Dialog {
               typeof raw?.fadeMs === "number"
                 ? raw.fadeMs
                 : typeof line.fadeSoundMs === "number"
-                ? line.fadeSoundMs
-                : null,
+                  ? line.fadeSoundMs
+                  : null,
           };
     if (!this.audio) return;
     if (!this.audio) return;
