@@ -51,8 +51,9 @@ class Day0QuizLog {
     // Eva
     this.eva = null;
 
-    // Fade state
-    this.active = false;
+    // Eva TTS voice — own Audio element, isolated from all other audio
+    this._evaVoiceEl = null;
+    this.evaVoiceVolume = 1.0; // adjust between 0.0 and 1.0
     this.alpha = 0;
     this.fadeFrom = 0;
     this.fadeTo = 0;
@@ -124,17 +125,17 @@ class Day0QuizLog {
       this.input.hide();
       const idx =
         this.notebookContent.push(
-          `${this.eva.icon}${this.eva.prefix}: (thinking…)`
+          `${this.eva.icon}${this.eva.prefix}: (thinking…)`,
         ) - 1;
       this._invalidateWrap();
 
       try {
         const reply = await this.eva.ask(v);
         console.log(`[AI OUTPUT] Eva: ${reply}`);
-        this.notebookContent[
-          idx
-        ] = `${this.eva.icon}${this.eva.prefix}: ${reply}`;
+        this.notebookContent[idx] =
+          `${this.eva.icon}${this.eva.prefix}: ${reply}`;
         this.notebookContent.push("***");
+        this._playEvaVoice(reply); // speak the reply via ElevenLabs
         this._afterAIReply(reply);
       } catch (err) {
         this.notebookContent[idx] = `${this.eva.icon}${
@@ -169,8 +170,8 @@ class Day0QuizLog {
           ? this.fadeDurMoveIn
           : this.fadeDurMoveOut
         : goingIn
-        ? this.fadeDurPageIn
-        : this.fadeDurPageOut;
+          ? this.fadeDurPageIn
+          : this.fadeDurPageOut;
 
     this.fadeFrom = this.alpha;
     this.fadeTo = shouldBeActive ? 255 : 0;
@@ -369,7 +370,7 @@ class Day0QuizLog {
       this.anchorY + this.y1,
       this.w1,
       this.h1,
-      alpha
+      alpha,
     );
     this._drawLines(
       lines.slice(cap, cap * 2),
@@ -377,7 +378,7 @@ class Day0QuizLog {
       this.anchorY + this.y2,
       this.w2,
       this.h2,
-      alpha
+      alpha,
     );
   }
 
@@ -508,6 +509,44 @@ class Day0QuizLog {
   _placeholderText() {
     const n = Math.min(this.questionCount + 1, this.inputLimit);
     return `Q${n}: ${this.placeholderBase}`;
+  }
+
+  // Fetch TTS audio from the server and play it.
+  // Uses a blob URL so nothing is written to disk.
+  // Silently fails if the server is unavailable — game logic is unaffected.
+  async _playEvaVoice(text) {
+    try {
+      // Stop any currently playing Eva voice first
+      if (this._evaVoiceEl) {
+        this._evaVoiceEl.pause();
+        this._evaVoiceEl = null;
+      }
+
+      const res = await fetch("/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!res.ok) {
+        console.warn("TTS request failed:", res.status);
+        return;
+      }
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+
+      // Clean up the blob URL once playback ends
+      audio.addEventListener("ended", () => URL.revokeObjectURL(url));
+      audio.addEventListener("error", () => URL.revokeObjectURL(url));
+
+      audio.volume = Math.max(0, Math.min(1, this.evaVoiceVolume));
+      this._evaVoiceEl = audio;
+      audio.play().catch(() => {});
+    } catch (err) {
+      console.warn("TTS error (non-fatal):", err);
+    }
   }
 
   _easeInOutCubic(x) {

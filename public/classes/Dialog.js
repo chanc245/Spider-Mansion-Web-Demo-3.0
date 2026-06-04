@@ -239,7 +239,7 @@ class Dialog {
       if (this.audio && this.clickSfxPath) {
         this.audio.play(this.clickSfxPath, { volume: this.clickSfxVolume });
       }
-      this._stopDiaAudio(); // stop voiceover when player skips ahead
+      // diaAudio keeps playing — it will be stopped when the player advances
       this.typer.revealAll();
       this.arrow.reset();
       return;
