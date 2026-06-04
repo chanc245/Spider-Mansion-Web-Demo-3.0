@@ -205,6 +205,8 @@ function draw() {
 }
 
 function mousePressed() {
+  if (!dialog || !quiz || !logView) return; // guard: not yet initialised
+
   // Title → start INTRO VN
   if (appState === "TITLE") {
     appState = "VN";
@@ -237,6 +239,7 @@ function mousePressed() {
 }
 
 function keyPressed() {
+  if (!dialog || !quiz || !logView) return; // guard: not yet initialised
   if (dialog.isActive()) {
     dialog.keyPressed(key);
     return;
