@@ -1,3 +1,19 @@
+/*
+VISUAL
+bg — background image path (including cg)
+charCG — character sprite image path
+
+TEXT
+charName — name shown in the nameplate (blank/space = narrator, no nameplate)
+text — the dialogue/narration text
+
+AUDIO
+soundEffect — plays via AudioManager (BGM, ambience, one-shot SFX)
+stopSound — stops a sound; can be a path string or { path, fadeMs }
+fadeSoundMs — fade duration in ms when used alongside stopSound
+diaAudio — voiceover file for this line (plays on the isolated private channel)
+*/
+
 // ALL SCRIPTS
 // - d0_vnScript
 // - d0_vnScript_postQuiz_Good
