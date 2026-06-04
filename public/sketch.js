@@ -3,7 +3,6 @@ let audioMgr;
 let quiz, logView, dialog;
 
 let showQuizAfterDialog = true;
-const QUIZ_AUTO_RETURN_DELAY_MS = 3000;
 
 let tutorial;
 let tutorialHasRun = false;

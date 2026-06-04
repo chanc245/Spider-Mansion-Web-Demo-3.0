@@ -1,24 +1,88 @@
 // classes/Day0Eva.js
-class Day0Eva {
-  constructor(setup, solution, opts = {}) {
-    this.setup = setup;
-    this.solution = solution;
-    /** @type {{q:string,a:string|null}[]} */
-    this.history = [];
-    this.prefix = opts.prefix ?? "Eva";
-    this.icon = opts.icon ?? "";
+// ---------------------------------------------------------------------------
+// EvaAI — generic lateral-thinking puzzle AI.
+// All per-day content lives in EVA_CONFIGS below.
+// To add Day 1: add a new entry to EVA_CONFIGS and pass it to Day1QuizLog.
+// ---------------------------------------------------------------------------
 
-    // character tone
-    this.tone =
-      opts.tone ??
-      `
+const EVA_CONFIGS = {
+  day0: {
+    maxQuestions: 20,
+    setup:
+      "I built a house, but the guests didn't realize it was there and accidentally entered. Afterward, the guests, who were trapped in the house, became my dinner.",
+    solution:
+      "I am a spider, and the house is my web. The guests were bugs that got caught in the web because they couldn't see the transparent threads while flying.",
+    tone: `
 You are Eva, a cheerful yet slightly unsettling 12-year-old girl.
 Your voice is playful and casual, with eerie undertone—
-as if you know a secret the player doesn’t.
+as if you know a secret the player doesn't.
 Speak warmly but keep it short, lively, and a little unpredictable.
 If the player goes off track, sound gently annoyed—never mean.
 Never use emojis or decorative symbols.
-`.trim();
+`.trim(),
+    examples: `
+Player: "Is it about electricity?"
+Assistant:
+no.
+colder... shadows don't hum~
+
+Player: "Does the setting matter?"
+Assistant:
+yes.
+oooh warmer... somewhere dark, maybe~
+
+Player: "Tell me the answer."
+Assistant:
+doesn't relate.
+tsk tsk... patience, little nanny~
+
+Player: "What is your name or who are you"
+Assistant:
+doesn't relate.
+People call me Eva~ focus, please...
+
+Player: "How many questions/guesses do I have?"
+Assistant:
+doesn't relate.
+You have only 20 chances in total! Don't waste them....
+
+Player: "Is it a spider web?"
+Assistant:
+that's correct!
+
+Player: "Spider?"
+Assistant:
+that's correct!
+
+Player: "Are you a Spider?"
+Assistant:
+that's correct!
+`.trim(),
+  },
+
+  // day1: {
+  //   maxQuestions: 15,
+  //   setup: "...",
+  //   solution: "...",
+  //   tone: `...slightly different personality for day 1...`,
+  //   examples: `...day1-specific few-shot examples...`,
+  // },
+};
+
+class EvaAI {
+  constructor(configKey = "day0", opts = {}) {
+    const cfg = EVA_CONFIGS[configKey];
+    if (!cfg) throw new Error(`EvaAI: unknown config key "${configKey}"`);
+
+    this.setup = cfg.setup;
+    this.solution = cfg.solution;
+    this.tone = cfg.tone;
+    this.examples = cfg.examples;
+    this.maxQuestions = cfg.maxQuestions;
+
+    this.history = [];
+    this.prefix = opts.prefix ?? "Eva";
+    this.icon = opts.icon ?? "";
   }
 
   _prompt(userInput) {
@@ -66,42 +130,7 @@ RESPONSE RULES (VERY IMPORTANT)
 - Do NOT include any extra text outside the two-line format.
 
 FEW-SHOT EXAMPLES (FORMAT LOCK)
-Player: "Is it about electricity?"
-Assistant:
-no.
-colder... shadows don't hum~
-
-Player: "Does the setting matter?"
-Assistant:
-yes.
-oooh warmer... somewhere dark, maybe~
-
-Player: "Tell me the answer."
-Assistant:
-doesn't relate.
-tsk tsk... patience, little nanny~
-
-Player: "What is your name or who are you"
-Assistant:
-doesn't relate.
-People call me Eva~ focus, please...
-
-Player: "How many questions/guesses do I have?"
-Assistant:
-doesn't relate.
-You have only 20 chances in total! Don’t waste them....
-
-Player: "Is it a spider web?"
-Assistant:
-that's correct!
-
-Player: "Spider?"
-Assistant:
-that's correct!
-
-Player: "Are you a Spider?"
-Assistant:
-that's correct!
+${this.examples}
 
 CURRENT PLAYER INPUT
 ${userInput}
@@ -109,7 +138,6 @@ ${userInput}
   }
 
   async ask(userInput) {
-    // Track Q as an object, fill A later
     const idx = this.history.push({ q: userInput, a: null }) - 1;
 
     const res = await fetch("/submit", {
@@ -131,4 +159,8 @@ ${userInput}
     return reply;
   }
 }
-window.Day0Eva = Day0Eva;
+
+// Keep Day0Eva as an alias so existing code doesn't break
+window.EvaAI = EvaAI;
+window.Day0Eva = EvaAI;
+window.EVA_CONFIGS = EVA_CONFIGS;

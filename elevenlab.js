@@ -3,9 +3,6 @@
 // Returns a readable stream of audio bytes (mp3).
 
 import { ElevenLabsClient } from "elevenlabs";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const VOICE_ID = "wJqPPQ618aTW29mptyoc";
 

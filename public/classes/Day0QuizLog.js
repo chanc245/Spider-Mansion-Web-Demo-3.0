@@ -29,7 +29,7 @@ class Day0QuizLog {
     this.inputPaddingX = 5;
     this.placeholderBase = "write whatever you want to ask....";
     this.questionCount = 0;
-    this.inputLimit = 20;
+    this.inputLimit = 20; // overridden in setup() once eva is initialised
     this._justSubmitted = false;
     this.waitingForAI = false;
 
@@ -81,16 +81,13 @@ class Day0QuizLog {
   setup() {
     this._maxLinesPerBox = Math.floor(this.h1 / this.leading);
 
-    // Eva init
-    const setupText =
-      "I built a house, but the guests didn’t realize it was there and accidentally entered. Afterward, the guests, who were trapped in the house, became my dinner. Who am I?";
-    const solutionText =
-      "I am a spider, and the house is my web. The guests were bugs that got caught in the web because they couldn’t see the transparent threads while flying.";
-    this.eva = new Day0Eva(setupText, solutionText, {
+    // Eva init — "day0" pulls setup, solution, tone, maxQuestions from EVA_CONFIGS.
+    // For Day 1, swap "day0" → "day1" here (and add the config to EVA_CONFIGS).
+    this.eva = new EvaAI("day0", {
       prefix: "Eva",
       icon: "--",
     });
-
+    this.inputLimit = this.eva.maxQuestions; // sync limit from config
     // Input
     this.input = createInput("");
     this.input.attribute("placeholder", this._placeholderText());

@@ -7,8 +7,6 @@ class Dialog {
     this.w = opts.w ?? 750;
     this.h = opts.h ?? 141;
 
-    this.boxImagePath = opts.boxImage ?? null;
-
     this.boxImageNormalPath =
       opts.boxImageNormal ?? "assets/ui/ui_diaBox_nor.png";
     this.boxImageCharPath = opts.boxImageChar ?? "assets/ui/ui_diaBox_char.png";
@@ -72,9 +70,6 @@ class Dialog {
     this._finished = false;
     this.onFinish = null;
 
-    // Assets
-    this.boxImg = null;
-
     // SFX
     this.clickSfxPath = opts.clickSfxPath ?? "assets/audio/ui_clickDia.mp3";
     this.clickSfxVolume = opts.clickSfxVolume ?? 1.0;
@@ -90,8 +85,6 @@ class Dialog {
   }
 
   preload() {
-    if (this.boxImagePath) this.boxImg = loadImage(this.boxImagePath);
-
     this.boxImgNormal = loadImage(this.boxImageNormalPath);
     this.boxImgChar = loadImage(this.boxImageCharPath);
 
@@ -162,8 +155,8 @@ class Dialog {
     const hasName = !!(cur.charName && String(cur.charName).trim());
 
     const boxToUse = hasName
-      ? this.boxImgChar || this.boxImg || null
-      : this.boxImgNormal || this.boxImg || null;
+      ? this.boxImgChar || null
+      : this.boxImgNormal || null;
 
     if (boxToUse) {
       tint(255, uiA);
@@ -383,7 +376,6 @@ class Dialog {
                   ? line.fadeSoundMs
                   : null,
           };
-    if (!this.audio) return;
     if (!this.audio) return;
 
     const fadeOpt = { fadeMs: parsed.fadeMs || 0 };
