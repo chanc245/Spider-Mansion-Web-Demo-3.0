@@ -65,6 +65,7 @@ function preload() {
     holdBgAfterFinishMs: 150,
     clickSfxPath: "assets/audio/ui_clickDia.mp3",
     clickSfxVolume: 0.3,
+    diaAudioVolume: 0.3, // adjust between 0.0 and 1.0
   });
 
   // preload assets for each class
