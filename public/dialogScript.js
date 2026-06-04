@@ -1,113 +1,10 @@
-const vnScript_postQuiz_Good = [
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "For a first-time player, you’re pretty good at this!",
-    diaAudio: "d0_dia_g01.mp3",
-  },
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "I want you to play with me every day! It might even relate to what happened that day, so make sure you get used to this house!",
-    diaAudio: "d0_dia_g02.mp3",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "It seemed this would become her new bedtime routine.",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "Well, my job was to be her nanny, after all.",
-  },
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "Your room is on the first floor. I’ll see you tomorrow!",
-    diaAudio: "d0_dia_g03.mp3",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "She gave me a small wave before closing the door to her room.",
-    soundEffect: "assets/audio/dia_door.mp3",
-  },
-  {
-    charName: "Me",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "...?",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "This was already shaping up to be an... unusual job.",
-  },
-];
+// ALL SCRIPTS
+// - d0_vnScript
+// - d0_vnScript_postQuiz_Good
+// - d0_vnScript_postQuiz_Bad
+// - d0_vnScript_chris
 
-const vnScript_postQuiz_Bad = [
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "....",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "She stared at me with a blank expression. My blood froze.",
-  },
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "…For first-time player… you perform… well…",
-    diaAudio: "d0_dia_b01.mp3",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "Before I could react, her tone shifted—",
-  },
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "I want you to play with me every day! It might even relate to what happened that day, so make sure you get used to this house!",
-    diaAudio: "d0_dia_g02.mp3",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "It seemed this would become her new bedtime routine.",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "Well, my job was to be her nanny, after all.",
-  },
-  {
-    charName: "Eva",
-    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "Your room is on the first floor. I’ll see you tomorrow!",
-    diaAudio: "d0_dia_g03.mp3",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "She gave me a small wave before closing the door to her room.",
-    soundEffect: "assets/audio/dia_door.mp3",
-  },
-  {
-    charName: "Me",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "...?",
-  },
-  {
-    charName: " ",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "This was already shaping up to be an... unusual job.",
-  },
-];
-
-const vnScript = [
+const d0_vnScript = [
   {
     charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
@@ -201,7 +98,112 @@ const vnScript = [
   },
 ];
 
-const vnScript_chris = [
+const d0_vnScript_postQuiz_Good = [
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "For a first-time player, you’re pretty good at this!",
+    diaAudio: "d0_dia_g01.mp3",
+  },
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "I want you to play with me every day! It might even relate to what happened that day, so make sure you get used to this house!",
+    diaAudio: "d0_dia_g02.mp3",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "It seemed this would become her new bedtime routine.",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "Well, my job was to be her nanny, after all.",
+  },
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "Your room is on the first floor. I’ll see you tomorrow!",
+    diaAudio: "d0_dia_g03.mp3",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "She gave me a small wave before closing the door to her room.",
+    soundEffect: "assets/audio/dia_door.mp3",
+  },
+  {
+    charName: "Me",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "...?",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "This was already shaping up to be an... unusual job.",
+  },
+];
+
+const d0_vnScript_postQuiz_Bad = [
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "....",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "She stared at me with a blank expression. My blood froze.",
+  },
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "…For first-time player… you perform… well…",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "Before I could react, her tone shifted—",
+  },
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "I want you to play with me every day! It might even relate to what happened that day, so make sure you get used to this house!",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "It seemed this would become her new bedtime routine.",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "Well, my job was to be her nanny, after all.",
+  },
+  {
+    charName: "Eva",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "Your room on the first floor. I’ll see you tomorrow!",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_3f_Attic_cg.png",
+    text: "She gave me a small wave before closing the door to her room.",
+  },
+  {
+    charName: "Me",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "...?",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "This was already shaping up to be an... unusual job.",
+  },
+];
+
+const d0_vnScript_chris = [
   {
     charName: "???",
     bg: "assets/bg/bg_pr_ex_MansionFrontDoor.png",

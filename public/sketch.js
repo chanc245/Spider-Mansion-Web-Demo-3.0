@@ -82,10 +82,12 @@ function setup() {
 
   quiz.setQuizState(false);
 
-  if (typeof vnScript === "undefined") {
-    console.warn("vnScript is not defined. Did you include dialog.js?");
+  if (typeof d0_vnScript === "undefined") {
+    console.warn(
+      "d0_vnScript is not defined. Did you include dialogScript.js?",
+    );
   } else {
-    dialog.setScript(vnScript);
+    dialog.setScript(d0_vnScript);
   }
 
   dialog.onFinish = () => {
@@ -103,7 +105,7 @@ function setup() {
 
     const startGoodVN = () => {
       quiz.onScrollEnd = null;
-      dialog.setScript(vnScript_postQuiz_Good);
+      dialog.setScript(d0_vnScript_postQuiz_Good);
       dialog.onFinish = () => {
         appState = "END";
       };
@@ -126,7 +128,7 @@ function setup() {
 
     const startBadVN = () => {
       quiz.onScrollEnd = null;
-      dialog.setScript(vnScript_postQuiz_Bad);
+      dialog.setScript(d0_vnScript_postQuiz_Bad);
       dialog.onFinish = () => {
         appState = "END";
       };
