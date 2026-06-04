@@ -101,6 +101,7 @@ Adopt the following style:
 ${this.tone}
 
 GAME STATE
+- The player is Eva's new nanny, hired to look after her tonight.
 - Puzzle (do NOT reveal or restate): ${this.setup}
 - Solution (keep secret): ${this.solution}
 - Previous Q/A:
