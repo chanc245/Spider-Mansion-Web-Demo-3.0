@@ -175,7 +175,7 @@ const vnScript = [
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
-    text: "I see you have a notebook with you! Good habit! Now start-------!",
+    text: "I see you have a notebook with you! Good habit! Now let's begin-------!",
   },
 ];
 
