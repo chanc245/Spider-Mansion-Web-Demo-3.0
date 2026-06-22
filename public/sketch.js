@@ -2,6 +2,13 @@
 let audioMgr;
 let quiz, logView, dialog;
 
+// ── State managers (Day 1+) ───────────────────────────────────────
+let pa_investigateMgr,
+  dia_optionMgr,
+  pa_gameMgr,
+  pa_dinnerMgr,
+  pr_musicSearchMgr;
+
 let showQuizAfterDialog = true;
 
 let tutorial;
@@ -9,9 +16,22 @@ let tutorialHasRun = false;
 
 // --- Title/End screens ---
 let imgTitle, imgEnd;
-let appState = "TITLE"; // "TITLE" | "VN" | "QUIZ" | "END"
 
-// Track notebook/log overlay activation
+// appState controls which system owns the screen each frame.
+// Prefixes: PA_ = daytime  |  PR_ = nighttime  |  DIA_ = dialogue overlay (any time)
+//
+// "TITLE"            — title screen, waiting for first click
+// "DIA_VN"           — visual novel / dialogue running
+// "PR_QUIZ"          — night: Eva Q&A notebook
+// "PA_INVESTIGATE"   — day: player clicks all items in a room (required, no early exit)
+// "DIA_OPTION"       — any: dialogue branch with 2-4 choices, rejoins DIA_VN after
+// "PA_GAME"          — day: mini-game placeholder
+// "PA_DINNER"        — day: dinner scene, click characters (per-day config), tray to leave
+// "PR_MUSIC_SEARCH"  — night: player searches rooms for Eva before quiz
+// "END"              — end screen
+let appState = "TITLE";
+
+// Track notebook/log overlay activation (Day 0)
 let _prevNotebookReady = false;
 let _prevNotebookImage = null;
 
@@ -38,16 +58,14 @@ function preload() {
 
   // --- audio manager ---
   audioMgr = new AudioManager({ masterVolume: 1 });
-
   audioMgr.load("assets/audio/bg_ara.mp3", { loop: true, volume: 0.3 });
   audioMgr.load("assets/audio/dia_step.mp3");
   audioMgr.load("assets/audio/ui_clickDia.mp3", { volume: 0.5 });
 
-  // --- core scenes ---
+  // --- Day 0 scenes ---
   quiz = new Day0Quiz({ nbInDur: 700, nbOutDur: 450 });
   logView = new Day0QuizLog();
 
-  // Dialog uses the audio manager
   dialog = new Dialog({
     audio: audioMgr,
     x: 137,
@@ -64,10 +82,17 @@ function preload() {
     holdBgAfterFinishMs: 150,
     clickSfxPath: "assets/audio/ui_clickDia.mp3",
     clickSfxVolume: 0.3,
-    diaAudioVolume: 0.3, // adjust between 0.0 and 1.0
+    diaAudioVolume: 0.3,
   });
 
-  // preload assets for each class
+  // --- State managers (Day 1+) ---
+  pa_investigateMgr = new PA_InvestigateManager();
+  dia_optionMgr = new DIA_OptionManager();
+  pa_gameMgr = new PA_GameManager();
+  pa_dinnerMgr = new PA_DinnerManager();
+  pr_musicSearchMgr = new PR_MusicSearchManager();
+
+  // preload assets
   quiz.preload();
   logView.preload();
   dialog.preload();
@@ -79,7 +104,6 @@ function setup() {
 
   quiz.setup();
   logView.setup();
-
   quiz.setQuizState(false);
 
   if (typeof d0_vnScript === "undefined") {
@@ -90,16 +114,16 @@ function setup() {
     dialog.setScript(d0_vnScript);
   }
 
+  // ── Day 0 VN → QUIZ ─────────────────────────────────────────────
   dialog.onFinish = () => {
     if (showQuizAfterDialog) {
       quiz.setQuizState(true);
-      appState = "QUIZ";
+      appState = "PR_QUIZ";
     }
   };
 
-  // GOOD path
+  // ── Day 0 GOOD ending ───────────────────────────────────────────
   logView.onSolved = () => {
-    // Voice has already finished playing before this fires — transition immediately.
     showQuizAfterDialog = false;
     logView.setActive(false, "page");
 
@@ -109,20 +133,18 @@ function setup() {
       dialog.onFinish = () => {
         appState = "END";
       };
-      appState = "VN";
+      appState = "DIA_VN";
       dialog.start();
     };
 
-    quiz.onScrollEnd = (state, yOffset, visible) => {
+    quiz.onScrollEnd = (state) => {
       if (state === false) startGoodVN();
     };
-
     quiz.setQuizState(false);
   };
 
-  // BAD path
+  // ── Day 0 BAD ending ────────────────────────────────────────────
   logView.onExhausted = () => {
-    // Voice has already finished playing before this fires — transition immediately.
     showQuizAfterDialog = false;
     logView.setActive(false, "page");
 
@@ -132,14 +154,13 @@ function setup() {
       dialog.onFinish = () => {
         appState = "END";
       };
-      appState = "VN";
+      appState = "DIA_VN";
       dialog.start();
     };
 
-    quiz.onScrollEnd = (state, yOffset, visible) => {
+    quiz.onScrollEnd = (state) => {
       if (state === false) startBadVN();
     };
-
     quiz.setQuizState(false);
   };
 
@@ -147,8 +168,11 @@ function setup() {
   _prevNotebookImage = quiz.currentNotebook;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// DRAW
+// ─────────────────────────────────────────────────────────────────
 function draw() {
-  // --- High-level state screens first ---
+  // ── Static screens ──────────────────────────────────────────────
   if (appState === "TITLE") {
     background(0);
     if (imgTitle) image(imgTitle, 0, 0, 1024, 576);
@@ -161,14 +185,14 @@ function draw() {
     return;
   }
 
-  // --- VN layer  ---
+  // ── VN layer (always drawn as backdrop for overlay states) ───────
   dialog.update();
   dialog.render();
 
-  if (appState === "QUIZ" && !dialog.isActive()) {
+  // ── Day 0 QUIZ ───────────────────────────────────────────────────
+  if (appState === "PR_QUIZ" && !dialog.isActive()) {
     quiz.update();
 
-    // notebook/log overlay logic
     const notebookReady = quiz.isNotebookShown();
     const onLogPage = quiz.currentNotebook === quiz.notebookLog;
     const shouldBeActive = notebookReady && onLogPage;
@@ -184,15 +208,10 @@ function draw() {
 
     logView.render(quiz.notebookX, quiz.notebookY);
 
-    // --- Tutorial overlay ---
-    if (notebookReady && !tutorialHasRun && !tutorial.active) {
-      tutorial.start();
-    }
+    if (notebookReady && !tutorialHasRun && !tutorial.active) tutorial.start();
     tutorial.update();
     tutorial.render();
-    if (tutorial.done && !tutorialHasRun) {
-      tutorialHasRun = true;
-    }
+    if (tutorial.done && !tutorialHasRun) tutorialHasRun = true;
 
     if (tutorial && tutorial.active) {
       logView.input.hide();
@@ -203,37 +222,154 @@ function draw() {
     _prevNotebookReady = notebookReady;
     _prevNotebookImage = quiz.currentNotebook;
   }
+
+  // ── INVESTIGATE ─────────────────────────────────────────────────
+  if (appState === "PA_INVESTIGATE") {
+    pa_investigateMgr.update();
+    pa_investigateMgr.render();
+  }
+
+  // ── OPTION ──────────────────────────────────────────────────────
+  if (appState === "DIA_OPTION") {
+    dia_optionMgr.update();
+    dia_optionMgr.render();
+  }
+
+  // ── GAME ────────────────────────────────────────────────────────
+  if (appState === "PA_GAME") {
+    pa_gameMgr.update();
+    pa_gameMgr.render();
+  }
+
+  // ── DINNER ──────────────────────────────────────────────────────
+  if (appState === "PA_DINNER") {
+    pa_dinnerMgr.update();
+    pa_dinnerMgr.render();
+  }
+
+  // ── NIGHT_SEARCH ────────────────────────────────────────────────
+  if (appState === "PR_MUSIC_SEARCH") {
+    pr_musicSearchMgr.update();
+    pr_musicSearchMgr.render();
+  }
 }
 
+// ─────────────────────────────────────────────────────────────────
+// HELPERS — start a state and wire its onFinish back to VN
+// ─────────────────────────────────────────────────────────────────
+
+// Start an INVESTIGATE block, resume VN when done.
+function startPA_Investigate(opts, nextScript) {
+  appState = "PA_INVESTIGATE";
+  pa_investigateMgr.onFinish = () => {
+    appState = "DIA_VN";
+    if (nextScript) {
+      dialog.setScript(nextScript);
+      dialog.start();
+    }
+  };
+  pa_investigateMgr.start(opts);
+}
+
+// Start an OPTION block, resume VN when done.
+function startDIA_Option(opts, nextScript) {
+  appState = "DIA_OPTION";
+  dia_optionMgr.onFinish = () => {
+    appState = "DIA_VN";
+    if (nextScript) {
+      dialog.setScript(nextScript);
+      dialog.start();
+    }
+  };
+  dia_optionMgr.start(opts);
+}
+
+// Start a GAME, resume VN when done.
+function startPA_Game(opts, nextScript) {
+  appState = "PA_GAME";
+  pa_gameMgr.onFinish = () => {
+    appState = "DIA_VN";
+    if (nextScript) {
+      dialog.setScript(nextScript);
+      dialog.start();
+    }
+  };
+  pa_gameMgr.start(opts);
+}
+
+// Start DINNER, resume VN when done.
+function startPA_Dinner(opts, nextScript) {
+  appState = "PA_DINNER";
+  pa_dinnerMgr.onFinish = () => {
+    appState = "DIA_VN";
+    if (nextScript) {
+      dialog.setScript(nextScript);
+      dialog.start();
+    }
+  };
+  pa_dinnerMgr.start(opts);
+}
+
+// Start NIGHT_SEARCH, resume VN when correct room found.
+function startPR_MusicSearch(opts, nextScript) {
+  appState = "PR_MUSIC_SEARCH";
+  pr_musicSearchMgr.onFound = () => {
+    appState = "DIA_VN";
+    if (nextScript) {
+      dialog.setScript(nextScript);
+      dialog.start();
+    }
+  };
+  pr_musicSearchMgr.start(opts);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// INPUT
+// ─────────────────────────────────────────────────────────────────
 function mousePressed() {
   if (!dialog || !quiz || !logView) return; // guard: not yet initialised
 
-  // Title → start INTRO VN
   if (appState === "TITLE") {
-    appState = "VN";
+    appState = "DIA_VN";
     dialog.start();
     return;
   }
 
-  // End screen → (no-op).
-  if (appState === "END") {
+  if (appState === "END") return;
+
+  // State managers handle their own clicks first
+  if (appState === "PA_INVESTIGATE") {
+    pa_investigateMgr.mousePressed();
+    return;
+  }
+  if (appState === "DIA_OPTION") {
+    dia_optionMgr.mousePressed();
+    return;
+  }
+  if (appState === "PA_GAME") {
+    pa_gameMgr.mousePressed();
+    return;
+  }
+  if (appState === "PA_DINNER") {
+    pa_dinnerMgr.mousePressed();
+    return;
+  }
+  if (appState === "PR_MUSIC_SEARCH") {
+    pr_musicSearchMgr.mousePressed();
     return;
   }
 
-  // If tutorial is active, it captures the click
-  if (appState === "QUIZ" && tutorial && tutorial.active) {
+  if (appState === "PR_QUIZ" && tutorial && tutorial.active) {
     tutorial.mousePressed();
     return;
   }
 
-  // While VN is running, clicks advance the dialog only
   if (dialog.isActive()) {
     dialog.mousePressed();
     return;
   }
 
-  // VN is done → normal quiz inputs
-  if (appState === "QUIZ") {
+  if (appState === "PR_QUIZ") {
     quiz.mousePressed();
     logView.mousePressed();
   }
@@ -241,12 +377,21 @@ function mousePressed() {
 
 function keyPressed() {
   if (!dialog || !quiz || !logView) return; // guard: not yet initialised
+
+  // State managers don't use keyboard — VN and QUIZ do
+  if (
+    appState === "PA_INVESTIGATE" ||
+    appState === "DIA_OPTION" ||
+    appState === "PA_GAME" ||
+    appState === "PA_DINNER" ||
+    appState === "PR_MUSIC_SEARCH"
+  )
+    return;
+
   if (dialog.isActive()) {
     dialog.keyPressed(key);
     return;
   }
 
-  if (appState === "QUIZ") {
-    quiz.keyPressed();
-  }
+  if (appState === "PR_QUIZ") quiz.keyPressed();
 }
