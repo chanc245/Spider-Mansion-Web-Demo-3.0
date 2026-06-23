@@ -282,6 +282,11 @@ class DIA_OptionManager {
     this._tagLeft = null;
     this._tagRight = null;
     this._font = null;
+
+    // Optional full-screen background (used when no VN bg is behind us, e.g.
+    // the dinner option loop runs after the VN has faded out).
+    this._bgCache = {};
+    this._bgImg = null;
   }
 
   // Call once after p5 preload — reuses dialog's font if available
@@ -292,13 +297,25 @@ class DIA_OptionManager {
     this._font = loadFont("assets/fonts/Forum-Regular.ttf");
   }
 
+  // Preload any background images that start({ bg }) may reference.
+  preloadBg(path) {
+    if (path && !this._bgCache[path]) this._bgCache[path] = loadImage(path);
+  }
+
   // ── start ────────────────────────────────────────────────────────
+  // opts.bg — optional full-screen background path (cached via preloadBg)
   start(opts = {}) {
     this.choices = opts.choices ?? [];
     this._result = null;
     this._layout = [];
     this._webBufs = [];
     this._webProg = [];
+    if (opts.bg) {
+      if (!this._bgCache[opts.bg]) this._bgCache[opts.bg] = loadImage(opts.bg);
+      this._bgImg = this._bgCache[opts.bg];
+    } else {
+      this._bgImg = null;
+    }
     this.active = true;
     this._computeLayout();
     this._ensureBuffers();
@@ -414,6 +431,10 @@ class DIA_OptionManager {
   _drawBg() {
     if (!this._layout.length) return;
     const { EXPAND } = DIA_OptionManager;
+
+    // Full-screen bg image first (only when one was provided), then the
+    // radial vignette darkens around the option tags.
+    if (this._bgImg) image(this._bgImg, 0, 0, width, height);
 
     const minX = Math.min(...this._layout.map((o) => o.x));
     const minY = Math.min(...this._layout.map((o) => o.y));
@@ -976,6 +997,12 @@ class PA_WebInvestigateManager {
     this.active    = false;
     this.onAllSeen = null;
 
+    // Completion hold — after the last object is seen, keep rendering for a
+    // short beat before firing onAllSeen (driven from update(), not setTimeout,
+    // so the overlay stays on screen instead of flashing to black).
+    this._done          = false;
+    this._doneHoldUntil = 0;
+
     // Runtime state
     this._phase      = "start"; // "start" | "web" | "detail"
     this._config     = null;
@@ -1034,6 +1061,8 @@ class PA_WebInvestigateManager {
     this._selObj       = null;
     this._selSubIdx    = null;
     this._detailBtns   = [];
+    this._done          = false;
+    this._doneHoldUntil = 0;
 
     // Attach cached images to each object
     for (const obj of (config.objects || [])) {
@@ -1046,6 +1075,16 @@ class PA_WebInvestigateManager {
 
   // ── update ───────────────────────────────────────────────────────
   update() {
+    // Completion hold: keep the overlay rendered for a beat, then hand off.
+    if (this._done) {
+      if (millis() >= this._doneHoldUntil) {
+        this._done  = false;
+        this.active = false;
+        this.onAllSeen?.();
+      }
+      return;
+    }
+
     if (!this.active || this._phase !== "web") return;
 
     if (this._fadingIn && this._currentDim < PA_WebInvestigateManager.DIM_ALPHA) {
@@ -1111,7 +1150,7 @@ class PA_WebInvestigateManager {
 
   // ── input ────────────────────────────────────────────────────────
   mousePressed() {
-    if (!this.active) return;
+    if (!this.active || this._done) return; // ignore clicks during the hand-off hold
 
     if (this._phase === "start") {
       const bw = 260, bh = 52;
@@ -1193,9 +1232,9 @@ class PA_WebInvestigateManager {
 
     const total = (this._config?.objects || []).length;
     if (this._seenSet.size >= total) {
-      // All seen — fire callback after a short delay so render finishes
-      this.active = false;
-      setTimeout(() => this.onAllSeen?.(), 120);
+      // All seen — hold briefly (rendered) then hand off via update().
+      this._done          = true;
+      this._doneHoldUntil = millis() + 120;
     }
   }
 

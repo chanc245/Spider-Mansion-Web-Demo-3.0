@@ -213,11 +213,14 @@ function preload() {
       return;
     }
 
-    // Default: resume from next script line after option resolves
+    // Default: resume from next script line after option resolves.
+    // Pass the chosen option's text so it's spliced in as a narration line
+    // (the "option result text" feature) — without it, plain options like the
+    // kitchen converge choices would silently drop their result text.
     appState = "DIA_OPTION";
-    dia_optionMgr.onFinish = () => {
+    dia_optionMgr.onFinish = (chosenText) => {
       appState = "DIA_VN";
-      dialog.resumeFromOption();
+      dialog.resumeFromOption(chosenText ?? null);
     };
     dia_optionMgr.start(optConfig);
   };
@@ -228,6 +231,8 @@ function preload() {
   logView1.preload();
   dialog.preload();
   dia_optionMgr.preload();
+  // Dinner options run after the VN fades out, so they draw their own bg.
+  dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Dining.png");
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -460,6 +465,10 @@ function startD1KitchenInvestigate() {
 }
 
 function startD1Dinner() {
+  // Reset per-character "talked" flags so replaying the dinner (incl. debug
+  // re-entry) starts with no ✓ marks — the flags live on the shared script data.
+  if (typeof d1_dinner_characters !== "undefined")
+    d1_dinner_characters.forEach((c) => { c._talked = false; });
   appState = "DIA_VN";
   dialog.setScript(d1_vnScript_dinner_pre);
   dialog.onFinish = () => startD1DinnerOptions();
@@ -494,7 +503,8 @@ function startD1DinnerOptions() {
       dialog.start();
     }
   };
-  dia_optionMgr.start({ choices });
+  // bg: the VN has faded out by now, so the option screen paints its own bg.
+  dia_optionMgr.start({ choices, bg: "assets/bg/bg_pa_1f_Dining.png" });
 }
 
 function startD1Night() {
