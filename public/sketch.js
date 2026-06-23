@@ -2,12 +2,21 @@
 let audioMgr;
 let quiz, logView, dialog;
 
+// ── Day 1 quiz instances ─────────────────────────────────────────
+let quiz1, logView1;
+
 // ── State managers (Day 1+) ───────────────────────────────────────
 let pa_investigateMgr,
   dia_optionMgr,
   pa_gameMgr,
   pa_dinnerMgr,
-  pr_musicSearchMgr;
+  pr_musicSearchMgr,
+  pa_webInvestigateMgr;
+
+// Active quiz pointers — swapped between day0 and day1 instances
+let _activeQuiz, _activeLogView;
+let _prevNotebookReady = false;
+let _prevNotebookImage = null;
 
 let showQuizAfterDialog = true;
 
@@ -20,23 +29,111 @@ let imgTitle, imgEnd;
 // appState controls which system owns the screen each frame.
 // Prefixes: PA_ = daytime  |  PR_ = nighttime  |  DIA_ = dialogue overlay (any time)
 //
-// "TITLE"            — title screen, waiting for first click
-// "DIA_VN"           — visual novel / dialogue running
-// "PR_QUIZ"          — night: Eva Q&A notebook
-// "PA_INVESTIGATE"   — day: player clicks all items in a room (required, no early exit)
-// "DIA_OPTION"       — any: dialogue branch with 2-4 choices, rejoins DIA_VN after
-// "PA_GAME"          — day: mini-game placeholder
-// "PA_DINNER"        — day: dinner scene, click characters (per-day config), tray to leave
-// "PR_MUSIC_SEARCH"  — night: player searches rooms for Eva before quiz
-// "END"              — end screen
+// "TITLE"              — title screen, waiting for first click
+// "DIA_VN"             — visual novel / dialogue running
+// "PR_QUIZ"            — night: Eva/Ara Q&A notebook
+// "PA_INVESTIGATE"     — day: player clicks all items in a room
+// "DIA_OPTION"         — any: dialogue branch with 2-4 choices, rejoins DIA_VN after
+// "PA_GAME"            — day: mini-game placeholder
+// "PA_DINNER"          — day: dinner scene (legacy manager, unused for Day 1)
+// "PR_MUSIC_SEARCH"    — night: player searches rooms for music source
+// "PA_WEB_INVESTIGATE" — day: spider-web investigation overlay
+// "END"                — end screen
 let appState = "TITLE";
 
-// Track notebook/log overlay activation (Day 0)
-let _prevNotebookReady = false;
-let _prevNotebookImage = null;
+// ─── Kitchen investigation config ────────────────────────────────
+// Positions and asset paths match the spider-web investigation art.
+const D1_KITCHEN_OBJECTS = [
+  {
+    name: "window",
+    imgLine: "assets/inv_obj/obtLine_ktcn_01_Window.png",
+    imgFull: "assets/inv_obj/obt_ktcn_01_Window.png",
+    img: { x: 483, y: 104, w: 123, h: 106.66 },
+    text: "The window is open, letting in a slight breeze.",
+  },
+  {
+    name: "ashes",
+    imgLine: "assets/inv_obj/obtLine_ktcn_02_Ashes.png",
+    imgFull: "assets/inv_obj/obt_ktcn_02_Ashes.png",
+    img: { x: 270, y: 421, w: 41, h: 28 },
+    text: "You notice ashes on the ground. They smell like more than just burnt food; there's something else in the scent.",
+  },
+  {
+    name: "cigarette butts",
+    imgLine: "assets/inv_obj/obtLine_ktcn_03_CigaretteButt.png",
+    imgFull: "assets/inv_obj/obt_ktcn_03_CigaretteButt.png",
+    img: { x: 306, y: 401, w: 39, h: 24 },
+    text: "You find cigarette butts on the floor. Master Von Silken won't be pleased if he finds out Cook Harris is smoking in the kitchen. The smell is strong and herbal.",
+  },
+  {
+    name: "cigarette box",
+    imgLine: "assets/inv_obj/obtLine_ktcn_04_CigeretteBox.png",
+    imgFull: "assets/inv_obj/obt_ktcn_04_CigeretteBox.png",
+    img: { x: 859, y: 371, w: 60, h: 33 },
+    text: "A doctor's note reads: \"If you smoke too often, your sense of taste and smell may become dull.\"",
+  },
+  {
+    name: "recipe book",
+    imgLine: "assets/inv_obj/obtLine_ktcn_05_RecipeBook.png",
+    imgFull: "assets/inv_obj/obt_ktcn_05_RecipeBook.png",
+    img: { x: 510, y: 213, w: 70, h: 58.17 },
+    text: "You see a book near the window, its pages fluttering in the wind.",
+    subOptions: [
+      { label: "Read the book",  text: "There are no pictures at all. Instead, you see extremely detailed notes about flavors — so detailed they almost feel unnatural." },
+      { label: "Close the book", text: "The cover shows that it is a recipe book." },
+    ],
+  },
+  {
+    name: "ingredients",
+    imgLine: "assets/inv_obj/obtLine_ktcn_06_Ingredients.png",
+    imgFull: "assets/inv_obj/obt_ktcn_06_Ingredients.png",
+    img: { x: 387, y: 299, w: 166, h: 86 },
+    text: "All the ingredients are in good condition. You've heard he uses only high-quality produce. Not for Eva, though.",
+  },
+  {
+    name: "pot",
+    imgLine: "assets/inv_obj/obtLine_ktcn_07_Pot.png",
+    imgFull: "assets/inv_obj/obt_ktcn_07_Pot.png",
+    img: { x: 317, y: 224, w: 57, h: 66 },
+    text: "There is leftover soup in the pot.",
+    subOptions: [
+      { label: "Taste the soup", text: "You dip your finger in and taste the soup. … It tastes subtle… Anyone who takes a bite can't help but frown at the strange, uncanny flavor." },
+      { label: "Step away",      text: "You step away from the pot." },
+    ],
+  },
+];
 
+const D1_KITCHEN_WEB_CONFIG = {
+  bg: "assets/bg/bg_pa_1f_Kitchen.png",
+  webCenter: { x: 545, y: 208 },
+  objects: D1_KITCHEN_OBJECTS,
+};
+
+// Attic objects — same mechanic as the kitchen. One clickable object for now;
+// add more (bed, bookshelf) once their overlay art exists. Objects with no
+// imgLine/imgFull still work: the spider-web threads + hotspot make them
+// clickable, they just don't draw an overlay highlight yet.
+const D1_ATTIC_OBJECTS = [
+  {
+    name: "music box",
+    // imgLine / imgFull: add when attic overlay art is ready.
+    img: { x: 95, y: 150, w: 110, h: 70 }, // on the dresser, left side
+    text: "A delicate, round-looking music box that seems to have been taken very carefully care of. This might be the most expensive item you can see in this room.",
+  },
+  // { name: "bed",       img: { x:0,y:0,w:0,h:0 }, text: "A narrow daybed that looks very uncomfortable to sleep on; the bedsheet is clean but worn out." },
+  // { name: "bookshelf", img: { x:0,y:0,w:0,h:0 }, text: "An old, large bookshelf with only a few items on it: a handful of books that seem a little worn out." },
+];
+
+const D1_ATTIC_WEB_CONFIG = {
+  bg: "assets/bg/bg_pa_3f_Attic.png",
+  webCenter: { x: 512, y: 288 },               // placeholder
+  objects: D1_ATTIC_OBJECTS,
+};
+
+// ─────────────────────────────────────────────────────────────────
+// PRELOAD
+// ─────────────────────────────────────────────────────────────────
 function preload() {
-  // --- tutorial images ---
   tutorial = new TutorialOverlay({
     imagePaths: [
       "assets/tutorial/tut_1.png",
@@ -52,127 +149,170 @@ function preload() {
   });
   tutorial.preload();
 
-  // --- title/end images ---
   imgTitle = loadImage("assets/cg_titlePage.png");
-  imgEnd = loadImage("assets/cg_endPage.png");
+  imgEnd   = loadImage("assets/cg_endPage.png");
 
-  // --- audio manager ---
   audioMgr = new AudioManager({ masterVolume: 1 });
   audioMgr.load("assets/audio/bg_ara.mp3", { loop: true, volume: 0.3 });
   audioMgr.load("assets/audio/dia_step.mp3");
   audioMgr.load("assets/audio/ui_clickDia.mp3", { volume: 0.5 });
 
-  // --- Day 0 scenes ---
-  quiz = new Day0Quiz({ nbInDur: 700, nbOutDur: 450 });
-  logView = new Day0QuizLog();
+  // Day 0
+  quiz    = new Day0Quiz({ nbInDur: 700, nbOutDur: 450 });
+  logView = new Day0QuizLog("day0");
+
+  // Day 1 quiz (same notebook UI, different bg + puzzle)
+  quiz1    = new Day0Quiz({
+    nbInDur:  700,
+    nbOutDur: 450,
+    bgPath: "assets/quiz/bg_quiz_day1_dinningRoom.png",
+  });
+  logView1 = new Day0QuizLog("day1");
+
+  _activeQuiz    = quiz;
+  _activeLogView = logView;
 
   dialog = new Dialog({
     audio: audioMgr,
-    x: 137,
-    y: 396,
-    w: 750,
-    h: 141,
-    diaAudioDir: "assets/dia_audio",
-    fadeInMs: 400,
-    fadeOutMs: 200,
-    cgFadeMs: 250,
-    bgFadeMs: 300,
-    holdBgAfterFinishMs: 150,
-    clickSfxPath: "assets/audio/ui_clickDia.mp3",
-    clickSfxVolume: 0.3,
-    diaAudioVolume: 0.3,
+    x: 137, y: 396, w: 750, h: 141,
+    diaAudioDir:         "assets/dia_audio",
+    fadeInMs:             400,
+    fadeOutMs:            200,
+    cgFadeMs:             250,
+    bgFadeMs:             300,
+    holdBgAfterFinishMs:  150,
+    clickSfxPath:         "assets/audio/ui_clickDia.mp3",
+    clickSfxVolume:       0.3,
+    diaAudioVolume:       0.3,
   });
 
-  // --- State managers (Day 1+) ---
-  pa_investigateMgr = new PA_InvestigateManager();
-  dia_optionMgr = new DIA_OptionManager();
-  pa_gameMgr = new PA_GameManager();
-  pa_dinnerMgr = new PA_DinnerManager();
-  pr_musicSearchMgr = new PR_MusicSearchManager();
+  pa_investigateMgr    = new PA_InvestigateManager();
+  dia_optionMgr        = new DIA_OptionManager();
+  pa_gameMgr           = new PA_GameManager();
+  pa_dinnerMgr         = new PA_DinnerManager();
+  pr_musicSearchMgr    = new PR_MusicSearchManager();
+  pa_webInvestigateMgr = new PA_WebInvestigateManager();
 
-  // Wire DIA_OPTION into the VN — when a script line has an `option` field,
-  // Dialog pauses and calls this. After the player chooses, dialog.resumeFromOption()
-  // continues from the next line automatically.
+  // Preload investigation assets (bg + any overlay art per config)
+  pa_webInvestigateMgr.preload(D1_KITCHEN_WEB_CONFIG);
+  pa_webInvestigateMgr.preload(D1_ATTIC_WEB_CONFIG);
+
+  // ── Wire DIA_OPTION into the VN ───────────────────────────────
+  // Options with a branchId are routed manually; plain options resume the script.
   dialog.onOption = (optConfig) => {
+    if (optConfig.branchId === "d1_morning_room") {
+      appState = "DIA_OPTION";
+      dia_optionMgr.onFinish = (_text, idx) => {
+        if (idx === 1 && D1_ATTIC_OBJECTS.length > 0) {
+          startPA_WebInvestigate(D1_ATTIC_WEB_CONFIG, () => startD1Kitchen());
+        } else {
+          startD1Kitchen();
+        }
+      };
+      dia_optionMgr.start(optConfig);
+      return;
+    }
+
+    // Default: resume from next script line after option resolves
     appState = "DIA_OPTION";
-    dia_optionMgr.onFinish = (chosenText) => {
+    dia_optionMgr.onFinish = () => {
       appState = "DIA_VN";
-      dialog.resumeFromOption(chosenText ?? null);
+      dialog.resumeFromOption();
     };
     dia_optionMgr.start(optConfig);
   };
 
-  // preload assets
   quiz.preload();
   logView.preload();
+  quiz1.preload();
+  logView1.preload();
   dialog.preload();
   dia_optionMgr.preload();
 }
 
+// ─────────────────────────────────────────────────────────────────
+// SETUP
+// ─────────────────────────────────────────────────────────────────
 function setup() {
   const cnv = createCanvas(1024, 576);
   cnv.parent("canvas-container");
 
   quiz.setup();
   logView.setup();
+  quiz1.setup();
+  logView1.setup();
   quiz.setQuizState(false);
+  quiz1.setQuizState(false);
 
   if (typeof d0_vnScript === "undefined") {
-    console.warn(
-      "d0_vnScript is not defined. Did you include dialogScript.js?",
-    );
+    console.warn("d0_vnScript is not defined. Did you include d0_DialogScript.js?");
   } else {
     dialog.setScript(d0_vnScript);
   }
 
-  // ── Day 0 VN → QUIZ ─────────────────────────────────────────────
+  // ── Day 0: VN → quiz ────────────────────────────────────────────
   dialog.onFinish = () => {
     if (showQuizAfterDialog) {
+      _activeQuiz    = quiz;
+      _activeLogView = logView;
       quiz.setQuizState(true);
       appState = "PR_QUIZ";
     }
   };
 
-  // ── Day 0 GOOD ending ───────────────────────────────────────────
+  // ── Day 0 good ending ────────────────────────────────────────────
   logView.onSolved = () => {
     showQuizAfterDialog = false;
     logView.setActive(false, "page");
-
     const startGoodVN = () => {
       quiz.onScrollEnd = null;
       dialog.setScript(d0_vnScript_postQuiz_Good);
-      dialog.onFinish = () => {
-        appState = "END";
-      };
+      dialog.onFinish = () => { appState = "END"; };
       appState = "DIA_VN";
       dialog.start();
     };
-
-    quiz.onScrollEnd = (state) => {
-      if (state === false) startGoodVN();
-    };
+    quiz.onScrollEnd = (state) => { if (state === false) startGoodVN(); };
     quiz.setQuizState(false);
   };
 
-  // ── Day 0 BAD ending ────────────────────────────────────────────
+  // ── Day 0 bad ending ─────────────────────────────────────────────
   logView.onExhausted = () => {
     showQuizAfterDialog = false;
     logView.setActive(false, "page");
-
     const startBadVN = () => {
       quiz.onScrollEnd = null;
       dialog.setScript(d0_vnScript_postQuiz_Bad);
-      dialog.onFinish = () => {
-        appState = "END";
-      };
+      dialog.onFinish = () => { appState = "END"; };
       appState = "DIA_VN";
       dialog.start();
     };
-
-    quiz.onScrollEnd = (state) => {
-      if (state === false) startBadVN();
-    };
+    quiz.onScrollEnd = (state) => { if (state === false) startBadVN(); };
     quiz.setQuizState(false);
+  };
+
+  // ── Day 1 quiz outcomes ──────────────────────────────────────────
+  logView1.onSolved = () => {
+    logView1.setActive(false, "page");
+    quiz1.onScrollEnd = (state) => {
+      if (state === false) {
+        quiz1.onScrollEnd = null;
+        startD1NightPostQuiz("good");
+      }
+    };
+    quiz1.setQuizState(false);
+  };
+
+  // Exhaustion on Day 1 also leads to post-quiz (Ara lets it pass), but the
+  // opening dialogue is slightly different — colder. (Mirrors d0 Good/Bad.)
+  logView1.onExhausted = () => {
+    logView1.setActive(false, "page");
+    quiz1.onScrollEnd = (state) => {
+      if (state === false) {
+        quiz1.onScrollEnd = null;
+        startD1NightPostQuiz("bad");
+      }
+    };
+    quiz1.setQuizState(false);
   };
 
   _prevNotebookReady = quiz.isNotebookShown();
@@ -183,7 +323,6 @@ function setup() {
 // DRAW
 // ─────────────────────────────────────────────────────────────────
 function draw() {
-  // ── Static screens ──────────────────────────────────────────────
   if (appState === "TITLE") {
     background(0);
     if (imgTitle) image(imgTitle, 0, 0, 1024, 576);
@@ -196,149 +335,281 @@ function draw() {
     return;
   }
 
-  // ── VN layer (always drawn as backdrop for overlay states) ───────
+  // Clear each frame so the semi-transparent frame draws exactly once
+  // (otherwise it compounds on the un-cleared canvas and looks doubled).
+  background(0);
+
+  // VN layer — always drawn as backdrop
+  // During DIA_OPTION, only render the bg so the option UI owns the screen.
+  dialog.suppressUi = (appState === "DIA_OPTION");
   dialog.update();
   dialog.render();
 
-  // ── Day 0 QUIZ ───────────────────────────────────────────────────
+  // ── Quiz (day 0 and day 1 share this path via _activeQuiz) ──────
   if (appState === "PR_QUIZ" && !dialog.isActive()) {
-    quiz.update();
+    _activeQuiz.update();
 
-    const notebookReady = quiz.isNotebookShown();
-    const onLogPage = quiz.currentNotebook === quiz.notebookLog;
+    const notebookReady  = _activeQuiz.isNotebookShown();
+    const onLogPage      = _activeQuiz.currentNotebook === _activeQuiz.notebookLog;
     const shouldBeActive = notebookReady && onLogPage;
 
     let profile = null;
     if (notebookReady !== _prevNotebookReady) profile = "move";
-    else if (notebookReady && quiz.currentNotebook !== _prevNotebookImage)
+    else if (notebookReady && _activeQuiz.currentNotebook !== _prevNotebookImage)
       profile = "page";
 
-    if (profile) logView.setActive(shouldBeActive, profile);
-    else if (shouldBeActive !== logView.active)
-      logView.setActive(shouldBeActive, "page");
+    if (profile) _activeLogView.setActive(shouldBeActive, profile);
+    else if (shouldBeActive !== _activeLogView.active)
+      _activeLogView.setActive(shouldBeActive, "page");
 
-    logView.render(quiz.notebookX, quiz.notebookY);
+    _activeLogView.render(_activeQuiz.notebookX, _activeQuiz.notebookY);
 
-    if (notebookReady && !tutorialHasRun && !tutorial.active) tutorial.start();
-    tutorial.update();
-    tutorial.render();
-    if (tutorial.done && !tutorialHasRun) tutorialHasRun = true;
+    // Tutorial only runs on Day 0
+    if (_activeQuiz === quiz) {
+      if (notebookReady && !tutorialHasRun && !tutorial.active) tutorial.start();
+      tutorial.update();
+      tutorial.render();
+      if (tutorial.done && !tutorialHasRun) tutorialHasRun = true;
 
-    if (tutorial && tutorial.active) {
-      logView.input.hide();
-    } else if (logView.alpha > 200 && logView._canShowInputThisPage()) {
-      logView.input.show();
+      if (tutorial && tutorial.active) {
+        _activeLogView.input.hide();
+      } else if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
+        _activeLogView.input.show();
+      }
+    } else {
+      if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
+        _activeLogView.input.show();
+      }
     }
 
     _prevNotebookReady = notebookReady;
-    _prevNotebookImage = quiz.currentNotebook;
+    _prevNotebookImage = _activeQuiz.currentNotebook;
   }
 
-  // ── INVESTIGATE ─────────────────────────────────────────────────
   if (appState === "PA_INVESTIGATE") {
     pa_investigateMgr.update();
     pa_investigateMgr.render();
   }
 
-  // ── OPTION ──────────────────────────────────────────────────────
   if (appState === "DIA_OPTION") {
     dia_optionMgr.update();
     dia_optionMgr.render();
   }
 
-  // ── GAME ────────────────────────────────────────────────────────
   if (appState === "PA_GAME") {
     pa_gameMgr.update();
     pa_gameMgr.render();
   }
 
-  // ── DINNER ──────────────────────────────────────────────────────
   if (appState === "PA_DINNER") {
     pa_dinnerMgr.update();
     pa_dinnerMgr.render();
   }
 
-  // ── NIGHT_SEARCH ────────────────────────────────────────────────
   if (appState === "PR_MUSIC_SEARCH") {
     pr_musicSearchMgr.update();
     pr_musicSearchMgr.render();
   }
+
+  if (appState === "PA_WEB_INVESTIGATE") {
+    pa_webInvestigateMgr.update();
+    pa_webInvestigateMgr.render();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────
-// HELPERS — start a state and wire its onFinish back to VN
+// DAY 1 FLOW — each function hands off to the next via callbacks
 // ─────────────────────────────────────────────────────────────────
 
-// Start an INVESTIGATE block, resume VN when done.
+function startDay1() {
+  showQuizAfterDialog = false;
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_morning);
+  dialog.onFinish = null; // morning ends with a branching option, not onFinish
+  dialog.start();
+}
+
+function startD1Kitchen() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_kitchen);
+  dialog.onFinish = () => startPA_Game({ id: "ingredients" }, null, startD1Lunch);
+  dialog.start();
+}
+
+function startD1Lunch() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_lunch);
+  dialog.onFinish = () => startD1Afternoon();
+  dialog.start();
+}
+
+function startD1Afternoon() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_afternoon_pre);
+  dialog.onFinish = () => startD1KitchenInvestigate();
+  dialog.start();
+}
+
+function startD1KitchenInvestigate() {
+  startPA_WebInvestigate(D1_KITCHEN_WEB_CONFIG, () => {
+    appState = "DIA_VN";
+    dialog.setScript(d1_vnScript_afternoon_post);
+    dialog.onFinish = () => startD1Dinner();
+    dialog.start();
+  });
+}
+
+function startD1Dinner() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_dinner_pre);
+  dialog.onFinish = () => startD1DinnerOptions();
+  dialog.start();
+}
+
+// Dinner loop — presents talkable characters as DIA_OPTION choices.
+// Loops until "Return to your position" is picked.
+function startD1DinnerOptions() {
+  const chars = typeof d1_dinner_characters !== "undefined" ? d1_dinner_characters : [];
+
+  const choices = chars.map((c) => ({
+    label: (c._talked ? "✓ " : "") + c.label,
+    text:  c.label,
+  }));
+  choices.push({ label: "Return to your position", text: "__leave__" });
+
+  appState = "DIA_OPTION";
+  dia_optionMgr.onFinish = (_text, idx) => {
+    if (idx === chars.length) {
+      // Player leaves dinner
+      appState = "DIA_VN";
+      dialog.setScript(d1_vnScript_dinner_post);
+      dialog.onFinish = () => startD1Night();
+      dialog.start();
+    } else {
+      // Talk to this character, then loop back
+      chars[idx]._talked = true;
+      appState = "DIA_VN";
+      dialog.setScript(chars[idx].script);
+      dialog.onFinish = () => startD1DinnerOptions();
+      dialog.start();
+    }
+  };
+  dia_optionMgr.start({ choices });
+}
+
+function startD1Night() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_night_pre);
+  dialog.onFinish = () => startD1MusicSearch();
+  dialog.start();
+}
+
+function startD1MusicSearch() {
+  appState = "PR_MUSIC_SEARCH";
+  pr_musicSearchMgr.onFound = () => startD1NightDining();
+  pr_musicSearchMgr.start({
+    rooms: [
+      { id: "nanny",  label: "Your Room",  correct: false },
+      { id: "attic",  label: "Attic",       correct: false },
+      { id: "dining", label: "Dining Room", correct: true  },
+    ],
+    wrongText: "You don't hear any sound here.",
+  });
+}
+
+function startD1NightDining() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_night_dining);
+  dialog.onFinish = () => startD1Quiz();
+  dialog.start();
+}
+
+function startD1Quiz() {
+  _activeQuiz    = quiz1;
+  _activeLogView = logView1;
+  _prevNotebookReady = quiz1.isNotebookShown();
+  _prevNotebookImage = quiz1.currentNotebook;
+  quiz1.setQuizState(true);
+  appState = "PR_QUIZ";
+}
+
+// outcome: "good" (default) or "bad" — only the opening dialogue differs.
+function startD1NightPostQuiz(outcome = "good") {
+  appState = "DIA_VN";
+  dialog.setScript(
+    outcome === "bad"
+      ? d1_vnScript_night_postQuiz_Bad
+      : d1_vnScript_night_postQuiz_Good
+  );
+  dialog.onFinish = () => { appState = "END"; };
+  dialog.start();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// HELPERS — start a named state, wire onFinish back to VN
+// ─────────────────────────────────────────────────────────────────
+
 function startPA_Investigate(opts, nextScript) {
   appState = "PA_INVESTIGATE";
   pa_investigateMgr.onFinish = () => {
     appState = "DIA_VN";
-    if (nextScript) {
-      dialog.setScript(nextScript);
-      dialog.start();
-    }
+    if (nextScript) { dialog.setScript(nextScript); dialog.start(); }
   };
   pa_investigateMgr.start(opts);
 }
 
-// Start an OPTION block, resume VN when done.
 function startDIA_Option(opts, nextScript) {
   appState = "DIA_OPTION";
   dia_optionMgr.onFinish = () => {
     appState = "DIA_VN";
-    if (nextScript) {
-      dialog.setScript(nextScript);
-      dialog.start();
-    }
+    if (nextScript) { dialog.setScript(nextScript); dialog.start(); }
   };
   dia_optionMgr.start(opts);
 }
 
-// Start a GAME, resume VN when done.
-function startPA_Game(opts, nextScript) {
+// onDone: optional callback instead of nextScript
+function startPA_Game(opts, nextScript, onDone) {
   appState = "PA_GAME";
   pa_gameMgr.onFinish = () => {
     appState = "DIA_VN";
-    if (nextScript) {
-      dialog.setScript(nextScript);
-      dialog.start();
-    }
+    if (typeof onDone === "function") onDone();
+    else if (nextScript) { dialog.setScript(nextScript); dialog.start(); }
   };
   pa_gameMgr.start(opts);
 }
 
-// Start DINNER, resume VN when done.
 function startPA_Dinner(opts, nextScript) {
   appState = "PA_DINNER";
   pa_dinnerMgr.onFinish = () => {
     appState = "DIA_VN";
-    if (nextScript) {
-      dialog.setScript(nextScript);
-      dialog.start();
-    }
+    if (nextScript) { dialog.setScript(nextScript); dialog.start(); }
   };
   pa_dinnerMgr.start(opts);
 }
 
-// Start NIGHT_SEARCH, resume VN when correct room found.
 function startPR_MusicSearch(opts, nextScript) {
   appState = "PR_MUSIC_SEARCH";
   pr_musicSearchMgr.onFound = () => {
     appState = "DIA_VN";
-    if (nextScript) {
-      dialog.setScript(nextScript);
-      dialog.start();
-    }
+    if (nextScript) { dialog.setScript(nextScript); dialog.start(); }
   };
   pr_musicSearchMgr.start(opts);
+}
+
+function startPA_WebInvestigate(config, onDone) {
+  appState = "PA_WEB_INVESTIGATE";
+  pa_webInvestigateMgr.onAllSeen = () => {
+    appState = "DIA_VN";
+    if (typeof onDone === "function") onDone();
+  };
+  pa_webInvestigateMgr.start(config);
 }
 
 // ─────────────────────────────────────────────────────────────────
 // INPUT
 // ─────────────────────────────────────────────────────────────────
 function mousePressed() {
-  if (!dialog || !quiz || !logView) return; // guard: not yet initialised
+  if (!dialog || !quiz || !logView) return;
 
   if (appState === "TITLE") {
     appState = "DIA_VN";
@@ -348,27 +619,12 @@ function mousePressed() {
 
   if (appState === "END") return;
 
-  // State managers handle their own clicks first
-  if (appState === "PA_INVESTIGATE") {
-    pa_investigateMgr.mousePressed();
-    return;
-  }
-  if (appState === "DIA_OPTION") {
-    dia_optionMgr.mousePressed();
-    return;
-  }
-  if (appState === "PA_GAME") {
-    pa_gameMgr.mousePressed();
-    return;
-  }
-  if (appState === "PA_DINNER") {
-    pa_dinnerMgr.mousePressed();
-    return;
-  }
-  if (appState === "PR_MUSIC_SEARCH") {
-    pr_musicSearchMgr.mousePressed();
-    return;
-  }
+  if (appState === "PA_INVESTIGATE")    { pa_investigateMgr.mousePressed();    return; }
+  if (appState === "DIA_OPTION")        { dia_optionMgr.mousePressed();         return; }
+  if (appState === "PA_GAME")           { pa_gameMgr.mousePressed();            return; }
+  if (appState === "PA_DINNER")         { pa_dinnerMgr.mousePressed();          return; }
+  if (appState === "PR_MUSIC_SEARCH")   { pr_musicSearchMgr.mousePressed();     return; }
+  if (appState === "PA_WEB_INVESTIGATE"){ pa_webInvestigateMgr.mousePressed();  return; }
 
   if (appState === "PR_QUIZ" && tutorial && tutorial.active) {
     tutorial.mousePressed();
@@ -381,28 +637,23 @@ function mousePressed() {
   }
 
   if (appState === "PR_QUIZ") {
-    quiz.mousePressed();
-    logView.mousePressed();
+    _activeQuiz.mousePressed();
+    _activeLogView.mousePressed();
   }
 }
 
 function keyPressed() {
-  if (!dialog || !quiz || !logView) return; // guard: not yet initialised
+  if (!dialog || !quiz || !logView) return;
 
-  // State managers don't use keyboard — VN and QUIZ do
   if (
-    appState === "PA_INVESTIGATE" ||
-    appState === "DIA_OPTION" ||
-    appState === "PA_GAME" ||
-    appState === "PA_DINNER" ||
-    appState === "PR_MUSIC_SEARCH"
-  )
-    return;
+    appState === "PA_INVESTIGATE"     ||
+    appState === "DIA_OPTION"         ||
+    appState === "PA_GAME"            ||
+    appState === "PA_DINNER"          ||
+    appState === "PR_MUSIC_SEARCH"    ||
+    appState === "PA_WEB_INVESTIGATE"
+  ) return;
 
-  if (dialog.isActive()) {
-    dialog.keyPressed(key);
-    return;
-  }
-
-  if (appState === "PR_QUIZ") quiz.keyPressed();
+  if (dialog.isActive()) { dialog.keyPressed(key); return; }
+  if (appState === "PR_QUIZ") _activeQuiz.keyPressed();
 }
