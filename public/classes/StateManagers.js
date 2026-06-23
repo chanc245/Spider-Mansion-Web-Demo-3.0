@@ -631,7 +631,7 @@ class PA_GameManager {
 
     // speed ramp (px per 1/60s, multiplied gradually over time)
     this._fallSpeed = opts.startSpeed ?? 3.2;
-    this._speedRate = opts.speedRate  ?? 1.12; // multiplier accrued per 10s
+    this._speedRate = opts.speedRate  ?? 1.2; // multiplier accrued per 10s — slight, steady ramp
     this._speedMult = 1.0;
 
     // pot — sits low; its bottom tucks under the decorative frame
@@ -717,8 +717,8 @@ class PA_GameManager {
     }
 
     if (this._phase === "ended") {
-      // brief beat so the full bar is visible, then hand off
-      if (!this._finished && now - this._phaseStartMs >= 700) {
+      // hold on the "Success!" banner so it's readable, then hand off
+      if (!this._finished && now - this._phaseStartMs >= 1500) {
         this._finished = true;
         this.active    = false;
         if (this._canvasEl) this._canvasEl.style.imageRendering = ""; // restore smooth scaling
@@ -780,6 +780,7 @@ class PA_GameManager {
 
     this._drawBar();
     if (this._phase === "countdown") this._drawCountdown();
+    if (this._phase === "ended")     this._drawSuccess();
 
     drawingContext.imageSmoothingEnabled = true; // restore for other scenes
     pop();
@@ -812,6 +813,18 @@ class PA_GameManager {
     text(label, width / 2 + 5, height / 2 + 5); // shadow
     fill(255);
     text(label, width / 2, height / 2);
+    pop();
+  }
+
+  _drawSuccess() {
+    push();
+    if (this._font) textFont(this._font);
+    textAlign(CENTER, CENTER);
+    textSize(110);
+    fill(0, 0, 0, 130);
+    text("Success!", width / 2 + 5, height / 2 + 5); // shadow
+    fill(124, 207, 47);                               // green, matches the bar
+    text("Success!", width / 2, height / 2);
     pop();
   }
 
