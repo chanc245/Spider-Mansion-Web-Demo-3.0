@@ -73,8 +73,6 @@ function preload() {
     w: 750,
     h: 141,
     diaAudioDir: "assets/dia_audio",
-    boxImageNormal: "assets/ui/ui_diaBox_nor.png",
-    boxImageChar: "assets/ui/ui_diaBox_char.png",
     fadeInMs: 400,
     fadeOutMs: 200,
     cgFadeMs: 250,
