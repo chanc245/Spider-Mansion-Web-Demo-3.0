@@ -20,9 +20,6 @@ let _prevNotebookImage = null;
 
 let showQuizAfterDialog = true;
 
-let tutorial;
-let tutorialHasRun = false;
-
 // --- Title/End screens ---
 let imgTitle, imgEnd;
 
@@ -134,21 +131,6 @@ const D1_ATTIC_WEB_CONFIG = {
 // PRELOAD
 // ─────────────────────────────────────────────────────────────────
 function preload() {
-  tutorial = new TutorialOverlay({
-    imagePaths: [
-      "assets/tutorial/tut_1.png",
-      "assets/tutorial/tut_2.png",
-      "assets/tutorial/tut_3.png",
-      "assets/tutorial/tut_4.png",
-      "assets/tutorial/tut_5.png",
-      "assets/tutorial/tut_6.png",
-      "assets/tutorial/tut_7.png",
-      "assets/tutorial/tut_8.png",
-    ],
-    fadeOutMs: 450,
-  });
-  tutorial.preload();
-
   imgTitle = loadImage("assets/cg_titlePage.png");
   imgEnd   = loadImage("assets/cg_endPage.png");
 
@@ -192,6 +174,9 @@ function preload() {
   pa_dinnerMgr         = new PA_DinnerManager();
   pr_musicSearchMgr    = new PR_MusicSearchManager();
   pa_webInvestigateMgr = new PA_WebInvestigateManager();
+
+  // Mini-game assets (kitchen catch game)
+  pa_gameMgr.preload();
 
   // Preload investigation assets (bg + any overlay art per config)
   pa_webInvestigateMgr.preload(D1_KITCHEN_WEB_CONFIG);
@@ -369,22 +354,8 @@ function draw() {
 
     _activeLogView.render(_activeQuiz.notebookX, _activeQuiz.notebookY);
 
-    // Tutorial only runs on Day 0
-    if (_activeQuiz === quiz) {
-      if (notebookReady && !tutorialHasRun && !tutorial.active) tutorial.start();
-      tutorial.update();
-      tutorial.render();
-      if (tutorial.done && !tutorialHasRun) tutorialHasRun = true;
-
-      if (tutorial && tutorial.active) {
-        _activeLogView.input.hide();
-      } else if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
-        _activeLogView.input.show();
-      }
-    } else {
-      if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
-        _activeLogView.input.show();
-      }
+    if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
+      _activeLogView.input.show();
     }
 
     _prevNotebookReady = notebookReady;
@@ -437,7 +408,15 @@ function startDay1() {
 function startD1Kitchen() {
   appState = "DIA_VN";
   dialog.setScript(d1_vnScript_kitchen);
-  dialog.onFinish = () => startPA_Game({ id: "ingredients" }, null, startD1Lunch);
+  dialog.onFinish = () => startPA_Game({ id: "ingredients" }, null, startD1PostCook);
+  dialog.start();
+}
+
+// Short dialogue after the kitchen mini-game, then into lunch.
+function startD1PostCook() {
+  appState = "DIA_VN";
+  dialog.setScript(d1_vnScript_postCook);
+  dialog.onFinish = () => startD1Lunch();
   dialog.start();
 }
 
@@ -635,11 +614,6 @@ function mousePressed() {
   if (appState === "PA_DINNER")         { pa_dinnerMgr.mousePressed();          return; }
   if (appState === "PR_MUSIC_SEARCH")   { pr_musicSearchMgr.mousePressed();     return; }
   if (appState === "PA_WEB_INVESTIGATE"){ pa_webInvestigateMgr.mousePressed();  return; }
-
-  if (appState === "PR_QUIZ" && tutorial && tutorial.active) {
-    tutorial.mousePressed();
-    return;
-  }
 
   if (dialog.isActive()) {
     dialog.mousePressed();

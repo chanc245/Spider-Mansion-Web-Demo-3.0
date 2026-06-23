@@ -240,6 +240,25 @@ const d1_vnScript_kitchen = [
   // sketch.js starts PA_GAME here when this script finishes
 ];
 
+// ─── POST-COOK (after the kitchen mini-game) ───────────────────────────────────
+// Plays right after PA_GAME finishes, then hands off to the lunch script.
+
+const d1_vnScript_postCook = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pa_1f_Kitchen.png",
+    text: "The soup seems pretty delicious.",
+  },
+  {
+    charName: " ",
+    text: "It looks like a successful cook.",
+  },
+  {
+    charName: " ",
+    text: "You bring the soup back up to the attic.",
+  },
+];
+
 // ─── LUNCH ────────────────────────────────────────────────────────────────────
 
 const d1_vnScript_lunch = [

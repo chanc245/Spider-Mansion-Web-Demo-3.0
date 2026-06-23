@@ -561,89 +561,262 @@ class DIA_OptionManager {
   }
 }
 
-// ── GAME ─────────────────────────────────────────────────────────
-// Placeholder for mini-games. Renders a stub screen.
-// Replace _runGame() with actual mini-game logic when ready.
+// ── GAME (Day 1 kitchen mini-game) ───────────────────────────────
+// Full-frame falling-food "catch" game (1024×576).
+//
+// A pot at the bottom follows the mouse. Good food (carrot / mushroom /
+// potato) and bad food (banana peel / fish bone / half apple) fall from the
+// top, one of each at a time. Catch good → progress bar +1; catch bad → −1
+// (clamped at 0). Missing food costs nothing. When the green bar fills to
+// TARGET the round ends. A 3-2-1-Go! countdown plays before food falls.
+//
+// Assets are loaded in preload() — call pa_gameMgr.preload() from main preload.
 //
 // Config example:
-//   pa_gameMgr.start({ id: "ingredients" });
+//   pa_gameMgr.start({ id: "ingredients", target: 10 });
 
 class PA_GameManager {
   constructor() {
-    this.active = false;
-    this.gameId = null;
+    this.active   = false;
+    this.gameId   = null;
     this.onFinish = null;
-    this._buttons = [];
+
+    // assets (filled by preload)
+    this._img      = null;
+    this._goodImgs = [];
+    this._badImgs  = [];
+    this._font     = null;
+
+    // tunables
+    this.TARGET = 10;   // net good-catches needed to fill the bar
+    this.FOOD_W = 120;
+    this.FOOD_H = 120;
+    this.POT_W  = 150;
+    this.POT_H  = 150;
+
+    // progress-bar geometry (top of frame, inside the border)
+    this.BAR_X = 150;
+    this.BAR_Y = 38;
+    this.BAR_W = 724;
+    this.BAR_H = 22;
+  }
+
+  // Call once from the main preload().
+  preload() {
+    const base = "assets/mini_game/day1_kichen/";
+    this._font = loadFont("assets/fonts/PixelMillennium.ttf"); // pixel font (Maid-to-Work)
+    this._img = {
+      bg:    loadImage(base + "bg_chore1_kitchen.png"),
+      frame: loadImage(base + "bg_frame.png"),
+      pot:   loadImage(base + "item_pot.png"),
+    };
+    this._goodImgs = [
+      loadImage(base + "food_good_carrot.png"),
+      loadImage(base + "food_good_mushroom.png"),
+      loadImage(base + "food_good_potato.png"),
+    ];
+    this._badImgs = [
+      loadImage(base + "food_bad_bananaPeel.png"),
+      loadImage(base + "food_bad_fishBone.png"),
+      loadImage(base + "food_bad_halfApple.png"),
+    ];
   }
 
   start(opts = {}) {
-    this.gameId = opts.id ?? "unknown";
-    this.active = true;
-    // TODO: initialise actual mini-game logic based on this.gameId
-    this._buttons = [
-      {
-        x: 412,
-        y: 380,
-        w: 200,
-        h: 40,
-        label: "[ Finish Game ]", // stub — replace with real game completion
-        action: () => {
-          this.active = false;
-          this._buttons = [];
-          this.onFinish?.();
-        },
-      },
-    ];
+    this.gameId    = opts.id ?? "unknown";
+    this.TARGET    = opts.target ?? this.TARGET;
+    this.active    = true;
+    this._finished = false;
+    this._progress = 0;
+
+    // speed ramp (px per 1/60s, multiplied gradually over time)
+    this._fallSpeed = opts.startSpeed ?? 3.2;
+    this._speedRate = opts.speedRate  ?? 1.12; // multiplier accrued per 10s
+    this._speedMult = 1.0;
+
+    // pot — sits low; its bottom tucks under the decorative frame
+    this._pot = {
+      w: this.POT_W,
+      h: this.POT_H,
+      x: (width - this.POT_W) / 2,
+      y: height - this.POT_H + 24,
+    };
+
+    // falling items (one good, one bad at a time)
+    this._good = this._makeItem(this._goodImgs);
+    this._bad  = this._makeItem(this._badImgs);
+    this._respawn(this._good, this._bad);
+    this._respawn(this._bad,  this._good);
+
+    // crisp pixel art: switch the canvas to nearest-neighbour upscaling while
+    // the mini-game runs (restored in the ended hand-off so the VN art stays smooth)
+    this._canvasEl =
+      typeof drawingContext !== "undefined" && drawingContext.canvas
+        ? drawingContext.canvas
+        : null;
+    if (this._canvasEl) this._canvasEl.style.imageRendering = "pixelated";
+
+    // phase: countdown → playing → ended
+    this._phase        = "countdown";
+    this._phaseStartMs = millis();
+  }
+
+  _makeItem(pool) {
+    return {
+      x: 0, y: -this.FOOD_H, w: this.FOOD_W, h: this.FOOD_H,
+      vy: 0, img: null, _pool: pool,
+    };
+  }
+
+  // Respawn at top with a random x that doesn't horizontally overlap `other`.
+  _respawn(item, other) {
+    let x, tries = 0;
+    do {
+      x = floor(random(0, width - item.w));
+      tries++;
+    } while (other && abs(x - other.x) < item.w && tries < 50);
+    item.x   = x;
+    item.y   = -item.h - floor(random(0, 140)); // slight vertical stagger
+    item.img = random(item._pool);
+    item.vy  = this._fallSpeed * this._speedMult;
   }
 
   update() {
     if (!this.active) return;
-    // TODO: update mini-game logic here
+    const now = millis();
+    const dt  = deltaTime / 16.667; // frame-rate-independent step
+
+    if (this._phase === "countdown") {
+      // 3 → 2 → 1 → Go! (700ms each), then start falling
+      if (now - this._phaseStartMs >= 2700) {
+        this._phase        = "playing";
+        this._phaseStartMs = now;
+        this._lastSpeedMs  = now;
+      }
+      return;
+    }
+
+    if (this._phase === "playing") {
+      // pot follows the mouse
+      this._pot.x = constrain(mouseX - this._pot.w / 2, 0, width - this._pot.w);
+
+      // gradual speed ramp
+      const dtMs = now - this._lastSpeedMs;
+      this._lastSpeedMs = now;
+      this._speedMult *= Math.pow(this._speedRate, dtMs / 10000);
+
+      this._stepItem(this._good, this._bad, dt, true);
+      this._stepItem(this._bad,  this._good, dt, false);
+
+      if (this._progress >= this.TARGET) {
+        this._progress     = this.TARGET;
+        this._phase        = "ended";
+        this._phaseStartMs = now;
+      }
+      return;
+    }
+
+    if (this._phase === "ended") {
+      // brief beat so the full bar is visible, then hand off
+      if (!this._finished && now - this._phaseStartMs >= 700) {
+        this._finished = true;
+        this.active    = false;
+        if (this._canvasEl) this._canvasEl.style.imageRendering = ""; // restore smooth scaling
+        this.onFinish?.();
+      }
+    }
+  }
+
+  _stepItem(item, other, dt, isGood) {
+    item.vy = this._fallSpeed * this._speedMult;
+    item.y += item.vy * dt;
+
+    // catch zone = the upper rim of the pot
+    const z = {
+      x: this._pot.x + 18,
+      y: this._pot.y + 8,
+      w: this._pot.w - 36,
+      h: 46,
+    };
+    const hit =
+      item.x < z.x + z.w &&
+      item.x + item.w > z.x &&
+      item.y < z.y + z.h &&
+      item.y + item.h > z.y;
+
+    if (hit) {
+      if (isGood) this._progress = Math.min(this.TARGET, this._progress + 1);
+      else        this._progress = Math.max(0, this._progress - 1);
+      this._respawn(item, other);
+      return;
+    }
+
+    if (item.y >= height) this._respawn(item, other); // missed → no penalty
   }
 
   render() {
     if (!this.active) return;
 
     push();
-    background(20, 10, 10);
+    imageMode(CORNER);
+    drawingContext.imageSmoothingEnabled = false; // crisp pixel art
 
-    fill(200);
-    noStroke();
-    textSize(22);
-    textAlign(CENTER, CENTER);
-    text(`[ MINI-GAME: ${this.gameId} ]`, width / 2, height / 2 - 40);
-    textSize(14);
-    fill(140);
-    text("(game logic goes here)", width / 2, height / 2);
+    // full-frame background
+    if (this._img?.bg) image(this._img.bg, 0, 0, width, height);
+    else background(60, 40, 25);
 
-    // Stub finish button
-    const btn = this._buttons[0];
-    if (btn) {
-      fill(80, 60, 60);
-      stroke(160);
-      rect(btn.x, btn.y, btn.w, btn.h, 6);
-      fill(220);
-      noStroke();
-      textSize(15);
-      text(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
+    // falling food (hidden during the countdown for a clean read)
+    if (this._phase !== "countdown") {
+      const g = this._good, b = this._bad;
+      if (g.img) image(g.img, g.x, g.y, g.w, g.h);
+      if (b.img) image(b.img, b.x, b.y, b.w, b.h);
     }
+
+    // pot
+    if (this._img?.pot) image(this._img.pot, this._pot.x, this._pot.y, this._pot.w, this._pot.h);
+
+    // decorative frame border on top of the play area
+    if (this._img?.frame) image(this._img.frame, 0, 0, width, height);
+
+    this._drawBar();
+    if (this._phase === "countdown") this._drawCountdown();
+
+    drawingContext.imageSmoothingEnabled = true; // restore for other scenes
     pop();
   }
 
-  mousePressed() {
-    if (!this.active) return;
-    for (const btn of this._buttons) {
-      if (
-        mouseX >= btn.x &&
-        mouseX <= btn.x + btn.w &&
-        mouseY >= btn.y &&
-        mouseY <= btn.y + btn.h
-      ) {
-        btn.action();
-        return;
-      }
-    }
+  _drawBar() {
+    const { BAR_X: x, BAR_Y: y, BAR_W: w, BAR_H: h } = this;
+    const frac = constrain(this._progress / this.TARGET, 0, 1);
+    push();
+    noStroke();
+    fill(150, 150, 150);            // track (square corners — pixel style)
+    rect(x, y, w, h);
+    fill(124, 207, 47);             // green fill
+    if (frac > 0) rect(x, y, floor(w * frac), h);
+    pop();
   }
+
+  _drawCountdown() {
+    const elapsed = millis() - this._phaseStartMs;
+    let label;
+    if      (elapsed < 700)  label = "3";
+    else if (elapsed < 1400) label = "2";
+    else if (elapsed < 2100) label = "1";
+    else                     label = "Go!";
+    push();
+    if (this._font) textFont(this._font);
+    textAlign(CENTER, CENTER);
+    textSize(140);
+    fill(0, 0, 0, 120);
+    text(label, width / 2 + 5, height / 2 + 5); // shadow
+    fill(255);
+    text(label, width / 2, height / 2);
+    pop();
+  }
+
+  // pot follows the mouse — no click needed
+  mousePressed() {}
 }
 
 // ── DINNER ───────────────────────────────────────────────────────

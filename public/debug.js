@@ -70,6 +70,7 @@
     ["1 · Morning",             () => startDay1()],
     ["1b · Attic Investigate",  () => startPA_WebInvestigate(D1_ATTIC_WEB_CONFIG, () => startD1Kitchen())],
     ["2 · Kitchen (VN)",        () => startD1Kitchen()],
+    ["2b · Kitchen Mini-Game",  () => startPA_Game({ id: "ingredients" }, null, startD1PostCook)],
     ["3 · Lunch (attic)",       () => startD1Lunch()],
     ["4 · Afternoon",           () => startD1Afternoon()],
     ["5 · Kitchen Investigate", () => startD1KitchenInvestigate()],
