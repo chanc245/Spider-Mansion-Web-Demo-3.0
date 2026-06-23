@@ -150,17 +150,18 @@ class Dialog {
     this.bg.render(bgA);
     if (!this._running && !this._fadingOut && holdingBg) return;
 
+    // When an external UI (e.g. DIA_OPTION) owns the screen, keep the bg and
+    // decorative frame but skip the CG / text / arrow it would otherwise draw.
+    if (this.suppressUi) {
+      this._drawFrame(uiA);
+      return;
+    }
+
     // 2. Character art (CG)
     this.cg.render(uiA);
 
     // 3. Decorative frame
-    if (this.frameImg) {
-      push();
-      tint(255, uiA);
-      image(this.frameImg, 0, 0, width, height);
-      noTint();
-      pop();
-    }
+    this._drawFrame(uiA);
 
     push();
     const cur = this.script[this.index] || {};
@@ -216,6 +217,16 @@ class Dialog {
       pop();
     }
 
+    pop();
+  }
+
+  // Decorative frame overlay — drawn above BG/CG, below text.
+  _drawFrame(uiA) {
+    if (!this.frameImg || this.showFrame === false) return;
+    push();
+    tint(255, uiA);
+    image(this.frameImg, 0, 0, width, height);
+    noTint();
     pop();
   }
 
@@ -304,7 +315,9 @@ class Dialog {
       return;
     }
 
-    this.bg.set(line.bg || null);
+    // A line without a `bg` field inherits the current background.
+    // Use bg: null explicitly to clear it.
+    if ("bg" in line) this.bg.set(line.bg || null);
     if (line.stopSound) this._stopSoundLine(line);
     if (line.soundEffect && this.audio) this.audio.play(line.soundEffect);
     this._playDiaAudio(line.diaAudio ?? null);
