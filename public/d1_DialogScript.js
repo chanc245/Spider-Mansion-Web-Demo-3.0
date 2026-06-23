@@ -168,18 +168,22 @@ const d1_vnScript_kitchen = [
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_cook_angry.png",
     text: "When you reach for the plate, Cook Harris yells at you aggressively.",
   },
   {
     charName: "Cook",
+    charCG: "assets/charImg/char_cook_angry.png",
     text: "Hey! What do you think you're touching with your filthy hands?",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_cook_angry.png",
     text: "You explain that you came for Lady Eva's meal.",
   },
   {
     charName: "Cook",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "Ah right, you're that newbie who's that girl's nanny. You know, that girl doesn't really prefer to eat around this early.",
   },
   // Both choices converge at the same Cook response — purely flavor.
@@ -199,18 +203,22 @@ const d1_vnScript_kitchen = [
   },
   {
     charName: "Cook",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "Then bring those leftovers or whatever.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "Cook Harris points at a bucket filled with inedible scraps.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "You feel disgusted. Both by the food and Cook Harris's reaction.",
   },
   {
     charName: "Cook",
+    charCG: "assets/charImg/char_cook_angry.png",
     text: "Bring that food or get out of my face. I have to serve this gorgeous meal to the master.",
   },
   {
@@ -375,6 +383,7 @@ const d1_vnScript_afternoon_pre = [
 const d1_vnScript_afternoon_post = [
   {
     charName: "Cook",
+    charCG: "assets/charImg/char_cook_angry.png",
     bg: "assets/bg/bg_pa_1f_Kitchen.png",
     text: "Hey you! What are you doing here? Be gone if you're done with your chores!",
   },
@@ -495,6 +504,7 @@ const d1_dinner_characters = [
     script: [
       {
         charName: "Cook",
+        charCG: "assets/charImg/char_cook_normal.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
         text: "If I don't serve that little girl's meal even in front of Master Von Silken, it will seem too obvious.",
       },

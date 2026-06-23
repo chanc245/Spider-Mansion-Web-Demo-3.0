@@ -150,18 +150,15 @@ class Dialog {
     this.bg.render(bgA);
     if (!this._running && !this._fadingOut && holdingBg) return;
 
-    // When an external UI (e.g. DIA_OPTION) owns the screen, keep the bg and
-    // decorative frame but skip the CG / text / arrow it would otherwise draw.
-    if (this.suppressUi) {
-      this._drawFrame(uiA);
-      return;
-    }
-
     // 2. Character art (CG)
     this.cg.render(uiA);
 
     // 3. Decorative frame
     this._drawFrame(uiA);
+
+    // When an external UI (e.g. DIA_OPTION) owns the screen, keep the bg, CG and
+    // decorative frame but skip the nameplate / body text / arrow below.
+    if (this.suppressUi) return;
 
     push();
     const cur = this.script[this.index] || {};
@@ -282,10 +279,12 @@ class Dialog {
   resumeFromOption(resultText = null) {
     if (!this._running) return;
     if (resultText) {
-      // Splice the result line in, preserving the current BG so it doesn't fade to black.
+      // Splice the result line in, preserving the current BG and character
+      // sprite so neither fades out across the option (e.g. mid-conversation).
       this.script.splice(this.index + 1, 0, {
         text: resultText,
         bg: this.bg.curPath || undefined,
+        charCG: this.cg.curPath || undefined,
       });
     }
     this.index++;
