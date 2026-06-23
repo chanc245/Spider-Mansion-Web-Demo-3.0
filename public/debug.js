@@ -1,225 +1,292 @@
 // debug.js
-// Debug panel — only visible when ?debug=1 is in the URL.
+// Floating debug panel — only visible when ?debug=1 is in the URL.
 // e.g. http://localhost:3001/?debug=1
+// Buttons are "in-flow": they call the real flow functions in sketch.js so the
+// game continues correctly into the next stage, instead of just loading a
+// script in isolation. (Isolated single-script/state tests live in their own
+// section at the bottom.)
 // Remove or ignore this file in production.
 
 (function () {
   if (!new URLSearchParams(location.search).has("debug")) return;
 
-  // ── styles ──────────────────────────────────────────────────────
+  // ── safe call: warn instead of throwing if a global isn't loaded yet ──
+  const call = (label, fn) => {
+    try {
+      fn();
+    } catch (err) {
+      console.warn(`[debug] "${label}" failed:`, err.message);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────────
+  // FLOW DEFINITIONS  (each entry: [label, handler])
+  // ─────────────────────────────────────────────────────────────────
+
+  // Day 0 — title > vn > quiz > vn > end
+  const day0Flow = [
+    ["Title (reload)", () => location.reload()],
+    ["Intro VN", () => {
+      showQuizAfterDialog = true;
+      _activeQuiz = quiz; _activeLogView = logView;
+      dialog.setScript(d0_vnScript);
+      dialog.onFinish = () => {
+        if (showQuizAfterDialog) {
+          _activeQuiz = quiz; _activeLogView = logView;
+          quiz.setQuizState(true);
+          appState = "PR_QUIZ";
+        }
+      };
+      appState = "DIA_VN";
+      dialog.start();
+    }],
+    ["Quiz", () => {
+      showQuizAfterDialog = true;
+      _activeQuiz = quiz; _activeLogView = logView;
+      _prevNotebookReady = quiz.isNotebookShown();
+      _prevNotebookImage = quiz.currentNotebook;
+      quiz.setQuizState(true);
+      appState = "PR_QUIZ";
+    }],
+    ["Good Ending VN", () => {
+      showQuizAfterDialog = false;
+      dialog.setScript(d0_vnScript_postQuiz_Good);
+      dialog.onFinish = () => { appState = "END"; };
+      appState = "DIA_VN";
+      dialog.start();
+    }],
+    ["Bad Ending VN", () => {
+      showQuizAfterDialog = false;
+      dialog.setScript(d0_vnScript_postQuiz_Bad);
+      dialog.onFinish = () => { appState = "END"; };
+      appState = "DIA_VN";
+      dialog.start();
+    }],
+    ["END", () => { appState = "END"; }],
+  ];
+
+  // Day 1 — full chain, each button continues into the next stage
+  const day1Flow = [
+    ["1 · Morning",             () => startDay1()],
+    ["1b · Attic Investigate",  () => startPA_WebInvestigate(D1_ATTIC_WEB_CONFIG, () => startD1Kitchen())],
+    ["2 · Kitchen (VN)",        () => startD1Kitchen()],
+    ["3 · Lunch (attic)",       () => startD1Lunch()],
+    ["4 · Afternoon",           () => startD1Afternoon()],
+    ["5 · Kitchen Investigate", () => startD1KitchenInvestigate()],
+    ["6 · Dinner",              () => startD1Dinner()],
+    ["7 · Dinner Talk",         () => startD1DinnerOptions()],
+    ["8 · Night",               () => startD1Night()],
+    ["9 · Music Search",        () => startD1MusicSearch()],
+    ["10 · Night Dining",       () => startD1NightDining()],
+    ["11 · Day 1 Quiz",         () => startD1Quiz()],
+    ["12 · Post-Quiz (good)",   () => startD1NightPostQuiz("good")],
+    ["12 · Post-Quiz (bad)",    () => startD1NightPostQuiz("bad")],
+  ];
+
+  // Isolated — load one script/state on its own (no chaining). For art/text checks.
+  const isolatedScripts = [
+    // Day 1
+    ["d1 morning",       "d1_vnScript_morning"],
+    ["d1 kitchen",       "d1_vnScript_kitchen"],
+    ["d1 lunch",         "d1_vnScript_lunch"],
+    ["d1 afternoon",     "d1_vnScript_afternoon_pre"],
+    ["d1 afternoon-post","d1_vnScript_afternoon_post"],
+    ["d1 dinner",        "d1_vnScript_dinner_pre"],
+    ["d1 dinner-post",   "d1_vnScript_dinner_post"],
+    ["d1 night",         "d1_vnScript_night_pre"],
+    ["d1 night-dining",  "d1_vnScript_night_dining"],
+    ["d1 post-quiz good","d1_vnScript_night_postQuiz_Good"],
+    ["d1 post-quiz bad", "d1_vnScript_night_postQuiz_Bad"],
+    // Day 0
+    ["d0 intro",         "d0_vnScript"],
+    ["d0 chris",         "d0_vnScript_chris"],
+    ["d0 good",          "d0_vnScript_postQuiz_Good"],
+    ["d0 bad",           "d0_vnScript_postQuiz_Bad"],
+  ];
+
+  const runScriptByName = (name) => {
+    if (typeof window[name] === "undefined" && eval(`typeof ${name}`) === "undefined") {
+      console.warn("[debug] script not found:", name);
+      return;
+    }
+    const script = eval(name);
+    appState = "DIA_VN";
+    dialog.setScript(script);
+    dialog.start();
+  };
+
+  // ─────────────────────────────────────────────────────────────────
+  // STYLES
+  // ─────────────────────────────────────────────────────────────────
   const style = document.createElement("style");
   style.textContent = `
-    #debug-panel {
-      font-family: monospace;
-      font-size: 13px;
-      background: #1a1a1a;
-      color: #e0e0e0;
-      border-top: 2px solid #444;
-      padding: 10px 16px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      user-select: none;
-      width: 1024px;
-      box-sizing: border-box;
-    }
-    #debug-panel label { color: #aaa; margin-right: 4px; }
-    #debug-state-display {
-      color: #7ecfff;
-      font-weight: bold;
-      min-width: 160px;
-    }
-    #debug-panel button {
-      background: #2e2e2e;
-      color: #e0e0e0;
-      border: 1px solid #555;
-      border-radius: 4px;
-      padding: 3px 10px;
-      cursor: pointer;
+    #dbg {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      z-index: 99999;
+      font-family: ui-monospace, monospace;
       font-size: 12px;
-      font-family: monospace;
+      width: 232px;
+      background: rgba(20, 20, 24, 0.94);
+      color: #e6e6e6;
+      border: 1px solid #3a3a42;
+      border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      user-select: none;
+      overflow: hidden;
     }
-    #debug-panel button:hover { background: #3e3e3e; border-color: #888; }
-    #debug-panel .sep {
-      color: #444;
-      margin: 0 4px;
+    #dbg-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.04);
+      cursor: pointer;
     }
-    #debug-panel .group-label {
-      color: #888;
+    #dbg-head .title { font-weight: 700; letter-spacing: .5px; color: #cfcfe0; }
+    #dbg-state {
+      margin-left: auto;
       font-size: 11px;
-      margin-right: 2px;
+      color: #7ecfff;
+      font-weight: 700;
+      max-width: 92px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
+    #dbg-min {
+      color: #888;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    #dbg-body { padding: 8px 10px 10px; max-height: 60vh; overflow-y: auto; }
+    #dbg.collapsed #dbg-body { display: none; }
+    #dbg.collapsed { width: auto; }
+
+    .dbg-sec { margin-top: 10px; }
+    .dbg-sec:first-child { margin-top: 0; }
+    .dbg-sec > .lbl {
+      display: block;
+      color: #7a7a88;
+      font-size: 10px;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .dbg-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+    #dbg button {
+      background: #2a2a32;
+      color: #e6e6e6;
+      border: 1px solid #44444f;
+      border-radius: 5px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: inherit;
+      transition: background .12s, border-color .12s;
+    }
+    #dbg button:hover { background: #3a3a45; border-color: #6a6a7a; }
+    #dbg button.accent { border-color: #5a7da0; color: #adceff; }
+    .dbg-foot {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #33333b;
+    }
+    .dbg-foot button { flex: 1; }
+    .dbg-collapsible > .lbl { cursor: pointer; }
+    .dbg-collapsible.closed .dbg-grid { display: none; }
+    .dbg-collapsible > .lbl::before { content: "▾ "; color: #555; }
+    .dbg-collapsible.closed > .lbl::before { content: "▸ "; }
   `;
   document.head.appendChild(style);
 
-  // ── panel HTML ───────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────
+  // BUILD PANEL
+  // ─────────────────────────────────────────────────────────────────
   const panel = document.createElement("div");
-  panel.id = "debug-panel";
-  panel.innerHTML = `
-    <label>state:</label>
-    <span id="debug-state-display">–</span>
-    <span class="sep">|</span>
+  panel.id = "dbg";
 
-    <span class="group-label">jump →</span>
-    <button data-state="TITLE">TITLE</button>
-    <button data-state="DIA_VN">DIA_VN</button>
-    <button data-state="PR_QUIZ">PR_QUIZ</button>
-    <button data-state="END">END</button>
-
-    <span class="sep">|</span>
-    <span class="group-label">day1 →</span>
-    <button data-state="PA_INVESTIGATE">PA_INVESTIGATE</button>
-    <button data-state="DIA_OPTION">DIA_OPTION</button>
-    <button data-state="PA_GAME">PA_GAME</button>
-    <button data-state="PA_DINNER">PA_DINNER</button>
-    <button data-state="PR_MUSIC_SEARCH">PR_MUSIC_SEARCH</button>
-
-    <span class="sep">|</span>
-    <span class="group-label">script →</span>
-    <button data-script="d0_vnScript">d0_vnScript</button>
-    <button data-script="d0_vnScript_chris">d0_vnScript_chris</button>
-    <button data-script="d0_vnScript_postQuiz_Good">postQuiz_Good</button>
-    <button data-script="d0_vnScript_postQuiz_Bad">postQuiz_Bad</button>
-    <button data-script="d1_vnScript_morning">d1_morning</button>
-
-    <span class="sep">|</span>
-    <button id="debug-restart">↺ restart</button>
+  // header
+  const head = document.createElement("div");
+  head.id = "dbg-head";
+  head.innerHTML = `
+    <span class="title">🐞 DEBUG</span>
+    <span id="dbg-state">–</span>
+    <span id="dbg-min">▾</span>
   `;
-  document.body.appendChild(panel);
+  panel.appendChild(head);
 
-  // ── poll appState and update display ────────────────────────────
-  const display = document.getElementById("debug-state-display");
-  setInterval(() => {
-    if (typeof appState !== "undefined") display.textContent = appState;
-  }, 100);
+  const body = document.createElement("div");
+  body.id = "dbg-body";
+  panel.appendChild(body);
 
-  // ── state jump buttons ───────────────────────────────────────────
-  panel.querySelectorAll("button[data-state]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.dataset.state;
-      if (typeof appState === "undefined") return;
+  // helper: build a section of buttons
+  const makeSection = (label, entries, { accent = false, collapsible = false, closed = false, isScript = false } = {}) => {
+    const sec = document.createElement("div");
+    sec.className = "dbg-sec" + (collapsible ? " dbg-collapsible" : "") + (closed ? " closed" : "");
+    const lbl = document.createElement("span");
+    lbl.className = "lbl";
+    lbl.textContent = label;
+    sec.appendChild(lbl);
 
-      // For states that need a manager started, launch with stub config
-      switch (target) {
-        case "PA_INVESTIGATE":
-          if (typeof startPA_Investigate === "function") {
-            startPA_Investigate({
-              items: [
-                {
-                  id: "test1",
-                  label: "Test Item A",
-                  text: "Debug: item A text.",
-                },
-                {
-                  id: "test2",
-                  label: "Test Item B",
-                  text: "Debug: item B text.",
-                  subOptions: [
-                    { label: "Option 1", text: "You chose option 1." },
-                    { label: "Option 2", text: "You chose option 2." },
-                  ],
-                },
-              ],
-            });
-          }
-          break;
-
-        case "DIA_OPTION":
-          if (typeof startDIA_Option === "function") {
-            startDIA_Option({
-              prompt: "Debug: what do you choose?",
-              choices: [
-                { label: "Choice A", text: "You chose A." },
-                { label: "Choice B", text: "You chose B." },
-              ],
-            });
-          }
-          break;
-
-        case "PA_GAME":
-          if (typeof startPA_Game === "function") {
-            startPA_Game({ id: "debug_test" });
-          }
-          break;
-
-        case "PA_DINNER":
-          if (typeof startPA_Dinner === "function") {
-            startPA_Dinner({
-              characters: [
-                {
-                  id: "char1",
-                  label: "Eva",
-                  text: "Look! I usually get a good meal.",
-                },
-                {
-                  id: "char2",
-                  label: "Cook",
-                  text: "If I don't serve that little girl's meal...",
-                },
-              ],
-            });
-          }
-          break;
-
-        case "PR_MUSIC_SEARCH":
-          if (typeof startPR_MusicSearch === "function") {
-            startPR_MusicSearch({
-              rooms: [
-                { id: "nanny", label: "Your Room", correct: false },
-                { id: "attic", label: "Attic", correct: false },
-                { id: "dining", label: "Dining Room", correct: true },
-              ],
-              wrongText: "You don't hear any sound here.",
-            });
-          }
-          break;
-
-        default:
-          // Simple state jump — just set appState directly
-          appState = target;
-          break;
-      }
+    const grid = document.createElement("div");
+    grid.className = "dbg-grid";
+    entries.forEach(([text, handler]) => {
+      const b = document.createElement("button");
+      b.textContent = text;
+      if (accent) b.classList.add("accent");
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (isScript) call(text, () => runScriptByName(handler));
+        else call(text, handler);
+      });
+      grid.appendChild(b);
     });
-  });
+    sec.appendChild(grid);
 
-  // ── script jump buttons ─────────────────────────────────────────
-  const scriptMap = {
-    d0_vnScript: () =>
-      typeof d0_vnScript !== "undefined" ? d0_vnScript : null,
-    d0_vnScript_chris: () =>
-      typeof d0_vnScript_chris !== "undefined" ? d0_vnScript_chris : null,
-    d0_vnScript_postQuiz_Good: () =>
-      typeof d0_vnScript_postQuiz_Good !== "undefined"
-        ? d0_vnScript_postQuiz_Good
-        : null,
-    d0_vnScript_postQuiz_Bad: () =>
-      typeof d0_vnScript_postQuiz_Bad !== "undefined"
-        ? d0_vnScript_postQuiz_Bad
-        : null,
-    d1_vnScript_morning: () =>
-      typeof d1_vnScript_morning !== "undefined" ? d1_vnScript_morning : null,
+    if (collapsible) {
+      lbl.addEventListener("click", () => sec.classList.toggle("closed"));
+    }
+    return sec;
   };
 
-  panel.querySelectorAll("button[data-script]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.script;
-      const getScript = scriptMap[key];
-      if (!getScript) return;
-      const script = getScript();
-      if (!script) {
-        console.warn("Script not found:", key);
-        return;
-      }
-      if (typeof dialog === "undefined") return;
-      appState = "DIA_VN";
-      dialog.setScript(script);
-      dialog.start();
-    });
-  });
+  body.appendChild(makeSection("Day 1 flow", day1Flow, { accent: true }));
+  body.appendChild(makeSection("Day 0 flow", day0Flow));
+  body.appendChild(
+    makeSection("Isolated scripts (no chaining)", isolatedScripts, {
+      collapsible: true,
+      closed: true,
+      isScript: true,
+    })
+  );
 
-  // ── restart button ───────────────────────────────────────────────
-  document.getElementById("debug-restart").addEventListener("click", () => {
-    location.reload();
-  });
+  // footer
+  const foot = document.createElement("div");
+  foot.className = "dbg-foot";
+  const restart = document.createElement("button");
+  restart.textContent = "↺ Restart";
+  restart.addEventListener("click", (e) => { e.stopPropagation(); location.reload(); });
+  foot.appendChild(restart);
+  body.appendChild(foot);
+
+  document.body.appendChild(panel);
+
+  // ── minimize / expand ────────────────────────────────────────────
+  const toggle = () => {
+    panel.classList.toggle("collapsed");
+    document.getElementById("dbg-min").textContent =
+      panel.classList.contains("collapsed") ? "▸" : "▾";
+  };
+  head.addEventListener("click", toggle);
+
+  // ── live state badge ─────────────────────────────────────────────
+  const stateEl = document.getElementById("dbg-state");
+  setInterval(() => {
+    if (typeof appState !== "undefined") stateEl.textContent = appState;
+  }, 120);
 })();
