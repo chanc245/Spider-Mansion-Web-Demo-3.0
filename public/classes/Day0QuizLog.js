@@ -1,5 +1,6 @@
 class Day0QuizLog {
-  constructor() {
+  constructor(dayKey = "day0") {
+    this._dayKey = dayKey;
     // Notebook-relative placements
     this.x1 = 135 - 95;
     this.y1 = 110 - 65;
@@ -77,19 +78,16 @@ class Day0QuizLog {
   setup() {
     this._maxLinesPerBox = Math.floor(this.h1 / this.leading);
 
-    // Eva init — "day0" pulls setup, solution, tone, maxQuestions from EVA_CONFIGS.
-    // For Day 1, swap "day0" → "day1" here (and add the config to EVA_CONFIGS).
-    this.eva = new EvaAI("day0", {
-      prefix: "Eva",
-      icon: "--",
-    });
-    this.inputLimit = this.eva.maxQuestions; // sync limit from config
+    // dayKey selects which EVA_CONFIGS entry to use ("day0", "day1", …)
+    const prefix = this._dayKey === "day0" ? "Eva" : "Ara";
+    this.eva = new EvaAI(this._dayKey, { prefix, icon: "--" });
+    this.inputLimit = this.eva.maxQuestions;
 
-    // Populate notebook header from config so it stays in sync with the puzzle
+    const dayLabel = this._dayKey === "day0" ? "Day 0" : "Day 1";
     this.notebookContent = [
-      "Day 0 - Question:",
+      `${dayLabel} - Question:`,
       this.eva.setup,
-      "Who am I?",
+      this._dayKey === "day0" ? "Who am I?" : "What happened?",
       "*********** QnA Log ***********",
     ];
     // Input

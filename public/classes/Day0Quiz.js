@@ -1,8 +1,10 @@
 class Day0Quiz {
   constructor(opts = {}) {
     // configurable slide durations (ms
-    this.nbInDur = opts.nbInDur ?? 700; // bottom → visible
+    this.nbInDur  = opts.nbInDur  ?? 700; // bottom → visible
     this.nbOutDur = opts.nbOutDur ?? 500; // visible → offscreen
+    // per-day background (defaults to day 0 attic)
+    this.bgPath = opts.bgPath ?? "assets/quiz/bg_quiz_day0_attic.png";
 
     // assets
     this.bg = null;
@@ -47,7 +49,7 @@ class Day0Quiz {
   }
 
   preload() {
-    this.bg = loadImage("assets/quiz/bg_quiz_day0_attic.png");
+    this.bg = loadImage(this.bgPath);
     this.notebookLog = loadImage("assets/quiz/notebook_QuestionLog_1.png");
     this.notebookClues = loadImage("assets/quiz/notebook_Clues.png");
     this.notebookRules = loadImage("assets/quiz/notebook_Rules.png");

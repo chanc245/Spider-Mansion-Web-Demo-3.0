@@ -60,13 +60,53 @@ that's correct!
 `.trim(),
   },
 
-  // day1: {
-  //   maxQuestions: 15,
-  //   setup: "...",
-  //   solution: "...",
-  //   tone: `...slightly different personality for day 1...`,
-  //   examples: `...day1-specific few-shot examples...`,
-  // },
+  day1: {
+    maxQuestions: 15,
+    setup:
+      "There was a chef who was very precise in his cooking. Whenever he cooked, he always kept his recipe book open and would be somewhat violent to those around him. But one day, when the master took a bite of his dish, the master became very angry and threw the bowl away. The chef said that he definitely followed the recipe. What happened?",
+    solution:
+      "The chef was a heavy smoker. Realizing that his taste buds had become dull due to frequent smoking, he began to rely more than ever on his recipe book. However, he left the recipe book open near a window while cooking, and the wind flipped it to the wrong page. The recipe book had no pictures, making it impossible to notice the mistake. The dish looked similar but tasted completely different.",
+    tone: `
+You are Ara — Eva's cold, eerily composed night persona.
+You speak in short, measured sentences. No warmth. No playfulness.
+You are not cruel — just indifferent, as if human emotions are a curiosity to you.
+Occasionally you reveal flashes of something unsettling beneath the calm.
+Never use emojis or decorative symbols.
+`.trim(),
+    examples: `
+Player: "Did the chef do something wrong?"
+Assistant:
+yes.
+something was beyond his notice.
+
+Player: "Was it the ingredients?"
+Assistant:
+no.
+look closer at what changed around him.
+
+Player: "Was it the recipe book?"
+Assistant:
+yes.
+warmer. think about what could have altered it.
+
+Player: "Did the wind flip the page?"
+Assistant:
+that's correct!
+
+Player: "Was the book near a window?"
+Assistant:
+that's correct!
+
+Player: "The chef couldn't taste properly?"
+Assistant:
+yes.
+there is a reason for that too.
+
+Player: "He was a smoker?"
+Assistant:
+that's correct!
+`.trim(),
+  },
 };
 
 class EvaAI {
