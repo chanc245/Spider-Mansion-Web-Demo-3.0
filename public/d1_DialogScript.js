@@ -623,12 +623,10 @@ const d1_vnScript_night_dining = [
 ];
 
 // Plays after the Day 1 quiz is solved.
-const d1_vnScript_night_postQuiz = [
-  {
-    charName: "Ara",
-    bg: "assets/bg/bg_pr_1f_Dining.png",
-    text: "Good that you got this right. As a prize, I'll allow you to open the cover. Bon appétit.",
-  },
+// Shared tail — identical for both quiz outcomes. The only difference between
+// getting the quiz right vs. wrong is the opening lines (see _Good / _Bad below),
+// mirroring how Day 0 branches into postQuiz_Good / postQuiz_Bad.
+const d1_vnScript_night_postQuiz_tail = [
   // Both choices have the same outcome — Ara opens hers regardless.
   {
     option: {
@@ -715,3 +713,37 @@ const d1_vnScript_night_postQuiz = [
   },
   // sketch.js transitions to END (or Day 2) when this script finishes
 ];
+
+// Got the quiz right — Ara is pleased.
+const d1_vnScript_night_postQuiz_Good = [
+  {
+    charName: "Ara",
+    bg: "assets/bg/bg_pr_1f_Dining.png",
+    text: "Good that you got this right. As a prize, I'll allow you to open the cover. Bon appétit.",
+  },
+  ...d1_vnScript_night_postQuiz_tail,
+];
+
+// Got the quiz wrong — Ara lets it pass, but her tone is colder. (Placeholder
+// wording — slightly "off" like Day 0's bad path; edit freely.)
+const d1_vnScript_night_postQuiz_Bad = [
+  {
+    charName: "Ara",
+    bg: "assets/bg/bg_pr_1f_Dining.png",
+    text: "...",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_1f_Dining.png",
+    text: "She stared at you in silence for a moment too long. Your blood ran cold.",
+  },
+  {
+    charName: "Ara",
+    bg: "assets/bg/bg_pr_1f_Dining.png",
+    text: "...Not quite. But it doesn't matter. I'll allow you to open the cover anyway. Bon appétit.",
+  },
+  ...d1_vnScript_night_postQuiz_tail,
+];
+
+// Back-compat alias — defaults to the "good" path.
+const d1_vnScript_night_postQuiz = d1_vnScript_night_postQuiz_Good;
