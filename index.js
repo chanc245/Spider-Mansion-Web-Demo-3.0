@@ -25,6 +25,10 @@ const port = process.env.PORT || 3001;
 // -------- OPENAI CLIENT --------
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  // Use Node's native fetch (undici). The SDK's default keep-alive HTTP agent
+  // throws ERR_STREAM_PREMATURE_CLOSE on Node 22.x ("Premature close"), which
+  // made every /submit return 500; native fetch resolves it.
+  fetch: (...args) => fetch(...args),
 });
 
 async function getGptResultAsString(input) {
@@ -62,10 +66,17 @@ app.post("/submit", async (req, res) => {
     const aiResponse = await getGptResultAsString(input);
     res.json({ ai: aiResponse });
   } catch (err) {
-    console.error("Error:", err);
-    res
-      .status(500)
-      .json({ error: "Failed to generate output. Please try again." });
+    // Log full error to the server terminal, and surface the key fields
+    // (status/code/message) so the cause is visible client-side too.
+    console.error("/submit error:", err?.status, err?.code, err?.message, err);
+    res.status(500).json({
+      error: "Failed to generate output. Please try again.",
+      detail: {
+        status: err?.status ?? null,
+        code: err?.code ?? null,
+        message: err?.message ?? String(err),
+      },
+    });
   }
 });
 
