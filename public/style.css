@@ -2,15 +2,17 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  min-height: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   /* background-color: #000; */
 }
 
 html {
-  background: radial-gradient(#aeaeae 3px, transparent 4px),
+  background:
+    radial-gradient(#aeaeae 3px, transparent 4px),
     radial-gradient(#aeaeae 3px, transparent 4px),
     linear-gradient(rgb(50, 50, 50) 4px, transparent 0),
     linear-gradient(
@@ -32,8 +34,18 @@ html {
       transparent 109px
     ),
     rgb(50, 50, 50);
-  background-size: 109px 109px, 109px 109px, 100% 6px, 109px 109px, 109px 109px;
-  background-position: 54px 55px, 0px 0px, 0px 0px, 0px 0px, 0px 0px;
+  background-size:
+    109px 109px,
+    109px 109px,
+    100% 6px,
+    109px 109px,
+    109px 109px;
+  background-position:
+    54px 55px,
+    0px 0px,
+    0px 0px,
+    0px 0px,
+    0px 0px;
 }
 
 #canvas-container {

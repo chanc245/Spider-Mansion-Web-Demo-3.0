@@ -106,7 +106,7 @@ function setup() {
 
   if (typeof d0_vnScript === "undefined") {
     console.warn(
-      "d0_vnScript is not defined. Did you include dialogScript.js?",
+      "d0_vnScript is not defined. Did you include d0_DialogScript.js?",
     );
   } else {
     dialog.setScript(d0_vnScript);
