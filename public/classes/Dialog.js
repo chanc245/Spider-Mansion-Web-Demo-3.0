@@ -7,22 +7,22 @@ class Dialog {
     this.w = opts.w ?? 750;
     this.h = opts.h ?? 141;
 
-    this.boxImageNormalPath =
-      opts.boxImageNormal ?? "assets/ui/ui_diaBox_nor.png";
-    this.boxImageCharPath = opts.boxImageChar ?? "assets/ui/ui_diaBox_char.png";
+    // Decorative frame — sits above BG/CG, below text
+    this.frameImagePath = opts.frameImage ?? "assets/ui/ui_decor_frame.png";
+    this.frameImg = null;
 
     // Font
-    this.fontPath =
-      opts.fontPath ?? "assets/fonts/Lexend-VariableFont_wght.ttf";
+    this.fontPath = opts.fontPath ?? "assets/fonts/Forum-Regular.ttf";
     this.font = null;
 
     // Text metrics
     this.textSize = opts.textSize ?? 20;
-    this.leading = opts.leading ?? 26;
-    this.nameSize = opts.nameSize ?? 20;
+    this.leading = opts.leading ?? 23;
+    this.nameSize = opts.nameSize ?? 24;
 
-    this._nameRect = { ox: 14, oy: 9, w: 112, h: 25 };
-    this._textRect = { ox: 30, oy: 42, w: 690, h: 80 };
+    // Adjust these to reposition text and name on screen
+    this._textRect = { x: 195, y: 450, w: 640, h: 100 };
+    this._nameRect = { x: 480, y: 525, w: 65, h: 25 };
 
     // Alphas for UI/CG fade
     this.fadeInMs = opts.fadeInMs ?? 250;
@@ -58,7 +58,7 @@ class Dialog {
     this.arrow = new Blinker({ periodMs: opts.arrowBlinkPeriodMs ?? 900 });
 
     // Wrap cache — avoid re-wrapping the same text every draw frame
-    this._wrapCache = new Map(); // text -> string[]
+    this._wrapCache = new Map();
 
     // Preserve end BG
     this.preserveBgOnEnd = true;
@@ -79,18 +79,16 @@ class Dialog {
 
     // Dialogue voiceover — its own private Audio element, fully isolated
     // from AudioManager so it never conflicts with soundEffect or BGM.
-    this._diaAudioEl = null; // current HTMLAudioElement
-    this._diaAudioPath = null; // path of the loaded element (for reuse)
+    this._diaAudioEl = null;
+    this._diaAudioPath = null;
     this.diaAudioVolume = opts.diaAudioVolume ?? 1.0;
     this.diaAudioDir = opts.diaAudioDir
-      ? opts.diaAudioDir.replace(/\/?$/, "/") // ensure trailing slash
+      ? opts.diaAudioDir.replace(/\/?$/, "/")
       : "";
   }
 
   preload() {
-    this.boxImgNormal = loadImage(this.boxImageNormalPath);
-    this.boxImgChar = loadImage(this.boxImageCharPath);
-
+    if (this.frameImagePath) this.frameImg = loadImage(this.frameImagePath);
     this.font = loadFont(this.fontPath);
   }
 
@@ -132,7 +130,7 @@ class Dialog {
       this._fadingOut = false;
       this._running = false;
       this._finished = true;
-      this._stopDiaAudio(); // clean up any lingering voiceover
+      this._stopDiaAudio();
       this.onFinish?.();
     }
   }
@@ -144,36 +142,28 @@ class Dialog {
     const uiA = this.alpha;
     const bgA = this._fadingOut && this._uiOnlyFade ? 255 : uiA;
 
-    // BG
+    // ── Layer order (bottom → top) ────────────────────────────────
+    // 1. BG
     this.bg.render(bgA);
 
     if (!this._running && !this._fadingOut && holdingBg) return;
 
-    // CG
+    // 2. Character art (CG)
     this.cg.render(uiA);
 
-    // UI box
-    push();
-    const cur = this.script[this.index] || {};
-    const hasName = !!(cur.charName && String(cur.charName).trim());
-
-    const boxToUse = hasName
-      ? this.boxImgChar || null
-      : this.boxImgNormal || null;
-
-    if (boxToUse) {
+    // 3. Decorative frame — sits above BG and CG, below text
+    if (this.frameImg) {
+      push();
       tint(255, uiA);
-      image(boxToUse, this.x, this.y, this.w, this.h);
-    } else {
-      noStroke();
-      fill(255, 255, 255, uiA);
-      rect(this.x, this.y, this.w, this.h, 10);
-      stroke(0, 0, 0, uiA);
-      noFill();
-      rect(this.x, this.y, this.w, this.h, 10);
+      image(this.frameImg, 0, 0, width, height);
+      noTint();
+      pop();
     }
 
-    // nameplate
+    push();
+    const cur = this.script[this.index] || {};
+
+    // 4. Nameplate — centered at absolute position
     if (cur.charName) {
       const nr = this._nameRect;
       push();
@@ -182,12 +172,12 @@ class Dialog {
       textLeading(this.nameSize * 1.25);
       textAlign(CENTER, CENTER);
       noStroke();
-      fill(240, 240, 240, uiA);
-      text(cur.charName, this.x + nr.ox - 7, this.y + nr.oy + 3, nr.w, nr.h);
+      fill(0xf0, 0xf0, 0xf0, uiA);
+      text(cur.charName, nr.x, nr.y, nr.w, nr.h);
       pop();
     }
 
-    // body text (typewriter)
+    // 5. Body text (typewriter) — centered at absolute position
     const tr = this._textRect;
     const body = this.typer.visibleText;
     if (body) {
@@ -197,7 +187,7 @@ class Dialog {
       textLeading(this.leading);
       textAlign(LEFT, TOP);
       noStroke();
-      fill(0, 0, 0, uiA);
+      fill(0xf0, 0xf0, 0xf0, uiA);
       const wrapKey = body + "|" + tr.w;
       if (!this._wrapCache.has(wrapKey)) {
         this._wrapCache.set(wrapKey, this._wrap(body, tr.w));
@@ -205,25 +195,21 @@ class Dialog {
       const lines = this._wrapCache.get(wrapKey);
       const maxLines = Math.max(1, Math.floor(tr.h / this.leading));
       for (let i = 0; i < Math.min(lines.length, maxLines); i++) {
-        text(
-          lines[i],
-          this.x + tr.ox + 6,
-          this.y + tr.oy + i * this.leading + 5,
-        );
+        text(lines[i], tr.x, tr.y + i * this.leading);
       }
       pop();
     }
 
-    // blinking arrow
+    // 6. Blinking arrow
     if (!this.typer.typing && uiA > 0) {
-      const ax = this.x + this.w - 18;
-      const ay = this.y + this.h - 15;
+      const ax = 843;
+      const ay = 525;
       push();
       if (this.font) textFont(this.font);
       textSize(24);
       textAlign(RIGHT, BOTTOM);
       noStroke();
-      fill(0, 0, 0, Math.min(255, this.arrow.alpha * (uiA / 255)));
+      fill(0xf0, 0xf0, 0xf0, Math.min(255, this.arrow.alpha * (uiA / 255)));
       text(">", ax, ay);
       pop();
     }
@@ -234,27 +220,22 @@ class Dialog {
   next() {
     if (!this._running) return;
 
-    // finish typing first (user click reveals remainder)
     if (this.typer.typing) {
       if (this.audio && this.clickSfxPath) {
         this.audio.play(this.clickSfxPath, { volume: this.clickSfxVolume });
       }
-      // diaAudio keeps playing — it will be stopped when the player advances
       this.typer.revealAll();
       this.arrow.reset();
       return;
     }
 
-    // user click to advance to the next line → play click
     if (this.audio && this.clickSfxPath) {
       this.audio.play(this.clickSfxPath, { volume: this.clickSfxVolume });
     }
-    this._stopDiaAudio(); // stop voiceover before starting the next line's
+    this._stopDiaAudio();
 
-    // advance
     this.index++;
     if (this.index >= this.script.length) {
-      // end: clear CG instantly, fade only UI, hold BG briefly
       this.cg.clearInstant();
       this._fadingOut = true;
       this._uiOnlyFade = this.preserveBgOnEnd;
@@ -264,7 +245,6 @@ class Dialog {
     }
     this._applyLine(this.script[this.index], false);
 
-    // if we were mid-fading out UI (rare), brighten quickly
     if (this.alpha < 200 && !this._fadingOut) {
       this._uiFade.start(this.alpha, 255, Math.max(120, this.fadeInMs * 0.5));
     }
@@ -286,21 +266,16 @@ class Dialog {
 
   // —— internals ——
   _applyLine(line) {
-    // BG
     this.bg.set(line.bg || null);
 
-    // SFX (soundEffect / stopSound go through AudioManager — untouched)
     if (line.stopSound) this._stopSoundLine(line);
     if (line.soundEffect && this.audio) this.audio.play(line.soundEffect);
 
-    // Dialogue voiceover — private channel, no interference with the above
     this._playDiaAudio(line.diaAudio ?? null);
 
-    // CG policy: first CG fades in; CG->CG instant swap; CG->none fade out
     const hadCG = !!this.cg.curPath;
     if (!line.charCG) {
       if (hadCG) {
-        // fade out previous
         this.cg.prev = this.cg.cur;
         this.cg.prevPath = this.cg.curPath;
         this.cg.cur = null;
@@ -311,9 +286,8 @@ class Dialog {
         this.cg.clearInstant();
       }
     } else if (!hadCG) {
-      this.cg.set(line.charCG); // will fade in
+      this.cg.set(line.charCG);
     } else {
-      // CG->CG: instant swap (no fade)
       if (line.charCG !== this.cg.curPath) {
         this.cg.prev = null;
         this.cg.prevPath = null;
@@ -324,7 +298,6 @@ class Dialog {
           if (img) this.cg.curPath = line.charCG;
         });
       } else {
-        // same CG again
         this.cg.prev = null;
         this.cg.prevPath = null;
         this.cg._fade.start(255, 255, 1);
@@ -332,32 +305,26 @@ class Dialog {
       }
     }
 
-    // Typewriter
-    this._wrapCache.clear(); // new line = new text, clear wrap cache
+    this._wrapCache.clear();
     this.typer.start(line.text || "");
     this.arrow.setEnabled(!this.typer.typing);
   }
 
-  // Play a dialogue voiceover on the private channel.
-  // Stops any previously playing voiceover first.
-  // Skipped silently if path is null/undefined/empty.
   _playDiaAudio(path) {
     this._stopDiaAudio();
     if (!path) return;
     const fullPath = this.diaAudioDir + path;
     try {
-      // Reuse the element if it's the same file, otherwise create a new one
       if (this._diaAudioPath !== fullPath) {
         this._diaAudioEl = new Audio(fullPath);
         this._diaAudioPath = fullPath;
       }
       this._diaAudioEl.currentTime = 0;
       this._diaAudioEl.volume = Math.max(0, Math.min(1, this.diaAudioVolume));
-      this._diaAudioEl.play().catch(() => {}); // swallow autoplay policy errors
+      this._diaAudioEl.play().catch(() => {});
     } catch (_) {}
   }
 
-  // Stop the current dialogue voiceover immediately.
   _stopDiaAudio() {
     if (!this._diaAudioEl) return;
     try {
@@ -385,7 +352,6 @@ class Dialog {
                   : null,
           };
     if (!this.audio) return;
-
     const fadeOpt = { fadeMs: parsed.fadeMs || 0 };
     if (parsed.path === "ALL") this.audio.stopAll(fadeOpt);
     else this.audio.stop(parsed.path, fadeOpt);
@@ -400,7 +366,6 @@ class Dialog {
   }
 
   _wrap(textStr, maxWidth) {
-    // Set font state once per wrap call, not once per word iteration
     if (this.font) textFont(this.font);
     textSize(this.textSize);
     const words = String(textStr || "").split(/\s+/);
