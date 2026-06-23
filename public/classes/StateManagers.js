@@ -359,8 +359,8 @@ class DIA_OptionManager {
         this._result = this.choices[i].text;
         this.active = false;
         this._cleanupBuffers();
-        // onFinish receives the chosen text so sketch.js can feed it to Dialog
-        this.onFinish?.(this._result);
+        // onFinish receives (chosenText, choiceIndex) — index lets sketch.js branch
+        this.onFinish?.(this._result, i);
         return;
       }
     }
@@ -935,9 +935,583 @@ class PR_MusicSearchManager {
   }
 }
 
+// ── PA_WEB_INVESTIGATE ───────────────────────────────────────────
+// Spider-web investigation overlay.
+// Displays a line-art bg, animates a spider web, then reveals object images
+// when the player activates "WEB VISION" and clicks each object.
+// Fires onAllSeen() once every object has been interacted with.
+//
+// Config example:
+//   pa_webInvestigateMgr.start({
+//     bg: "assets/bg/bg_pa_1f_Kitchen_ItemLine.png",
+//     webCenter: { x: 545, y: 208 },
+//     objects: [
+//       {
+//         name: "window",
+//         imgLine: "assets/inv_obj/obtLine_ktcn_01_Window.png",
+//         imgFull: "assets/inv_obj/obt_ktcn_01_Window.png",
+//         img: { x: 483, y: 104, w: 123, h: 106.66 },
+//         text: "The window is open, letting in a slight breeze.",
+//       },
+//       {
+//         name: "recipe book",
+//         imgLine: "...", imgFull: "...",
+//         img: { x: 510, y: 213, w: 70, h: 58.17 },
+//         text: "You see a book near the window.",
+//         subOptions: [
+//           { label: "Read the book",  text: "There are no pictures at all..." },
+//           { label: "Close the book", text: "The cover shows that it is a recipe book." },
+//         ],
+//       },
+//     ],
+//   });
+
+class PA_WebInvestigateManager {
+  static ANIM_SPEED        = 0.05;
+  static THREAD_ANIM_SPEED = 0.15;
+  static DIM_ALPHA         = 180;
+  static DIM_FADE_SPEED    = 20;
+
+  constructor() {
+    this.active    = false;
+    this.onAllSeen = null;
+
+    // Runtime state
+    this._phase      = "start"; // "start" | "web" | "detail"
+    this._config     = null;
+    this._bgImg      = null;
+
+    // Web geometry
+    this._rings        = 0;
+    this._spokes       = 0;
+    this._noiseOff     = 0;
+    this._webPoints    = [];
+    this._segStyles    = [];
+    this._rects        = [];
+    this._progress     = 0;
+    this._animating    = false;
+    this._threadsBuilt = false;
+    this._currentDim   = 0;
+    this._fadingIn     = false;
+
+    // Seen tracking
+    this._seenSet = new Set();
+
+    // Detail panel
+    this._selObj       = null; // rect ref currently in detail
+    this._selSubIdx    = null; // null | 0 | 1 — which sub-option was clicked
+    this._detailBtns   = [];   // { x,y,w,h, action }
+
+    // Asset cache (preloaded by caller)
+    this._imgCache = {};
+    this._font     = null;
+  }
+
+  // Call in main preload() for each config you plan to use.
+  preload(config) {
+    if (!config) return;
+    if (config.bg) this._imgCache[config.bg] = loadImage(config.bg);
+    for (const obj of (config.objects || [])) {
+      if (obj.imgLine) this._imgCache[obj.imgLine] = loadImage(obj.imgLine);
+      if (obj.imgFull) this._imgCache[obj.imgFull] = loadImage(obj.imgFull);
+    }
+    if (!this._font) this._font = loadFont("assets/fonts/Forum-Regular.ttf");
+  }
+
+  start(config) {
+    this._config       = config;
+    this._bgImg        = this._imgCache[config.bg] || null;
+    this._phase        = "start";
+    this._progress     = 0;
+    this._animating    = false;
+    this._threadsBuilt = false;
+    this._currentDim   = 0;
+    this._fadingIn     = false;
+    this._rects        = [];
+    this._webPoints    = [];
+    this._segStyles    = [];
+    this._seenSet      = new Set();
+    this._selObj       = null;
+    this._selSubIdx    = null;
+    this._detailBtns   = [];
+
+    // Attach cached images to each object
+    for (const obj of (config.objects || [])) {
+      obj._imgLine = this._imgCache[obj.imgLine] || null;
+      obj._imgFull = this._imgCache[obj.imgFull] || null;
+    }
+
+    this.active = true;
+  }
+
+  // ── update ───────────────────────────────────────────────────────
+  update() {
+    if (!this.active || this._phase !== "web") return;
+
+    if (this._fadingIn && this._currentDim < PA_WebInvestigateManager.DIM_ALPHA) {
+      this._currentDim = Math.min(
+        PA_WebInvestigateManager.DIM_ALPHA,
+        this._currentDim + PA_WebInvestigateManager.DIM_FADE_SPEED,
+      );
+      if (this._currentDim >= PA_WebInvestigateManager.DIM_ALPHA)
+        this._fadingIn = false;
+    }
+
+    if (this._animating) {
+      this._progress += PA_WebInvestigateManager.ANIM_SPEED;
+      if (this._progress >= 1) {
+        this._progress = 1;
+        this._animating = false;
+        if (!this._threadsBuilt) {
+          for (const rec of this._rects) {
+            rec.threads        = this._buildThreadsQuad(rec.quad, rec.w, rec.h);
+            rec.threadProgress = 0;
+          }
+          this._threadsBuilt = true;
+        }
+      }
+    }
+
+    if (this._threadsBuilt) {
+      for (const rec of this._rects) {
+        if (rec.threadProgress < 1)
+          rec.threadProgress = Math.min(
+            1,
+            rec.threadProgress + PA_WebInvestigateManager.THREAD_ANIM_SPEED,
+          );
+      }
+    }
+  }
+
+  // ── render ───────────────────────────────────────────────────────
+  render() {
+    if (!this.active) return;
+
+    background(12, 12, 18);
+    if (this._bgImg) image(this._bgImg, 0, 0, width, height);
+
+    if (this._phase === "start") {
+      this._drawStartScreen();
+      return;
+    }
+
+    // Dim overlay
+    push();
+    noStroke();
+    fill(12, 12, 18, this._currentDim);
+    rect(0, 0, width, height);
+    pop();
+
+    this._drawWeb();
+    this._drawRects();
+    this._drawObjects();
+
+    if (this._phase === "detail") this._drawDetailPanel();
+  }
+
+  // ── input ────────────────────────────────────────────────────────
+  mousePressed() {
+    if (!this.active) return;
+
+    if (this._phase === "start") {
+      const bw = 260, bh = 52;
+      const bx = width / 2 - bw / 2, by = height / 2 - bh / 2;
+      if (mouseX > bx && mouseX < bx + bw && mouseY > by && mouseY < by + bh) {
+        this._phase      = "web";
+        this._currentDim = 0;
+        this._fadingIn   = true;
+        this._generateWeb();
+      }
+      return;
+    }
+
+    if (this._phase === "web" && this._threadsBuilt) {
+      for (const rec of this._rects) {
+        if (rec.threadProgress >= 1 && this._ptInImg(mouseX, mouseY, rec.objRef.img)) {
+          this._selObj    = rec;
+          this._selSubIdx = null;
+          this._phase     = "detail";
+          this._buildDetailBtns();
+          return;
+        }
+      }
+    }
+
+    if (this._phase === "detail") {
+      for (const btn of this._detailBtns) {
+        if (mouseX >= btn.x && mouseX <= btn.x + btn.w &&
+            mouseY >= btn.y && mouseY <= btn.y + btn.h) {
+          btn.action();
+          return;
+        }
+      }
+    }
+  }
+
+  // ── detail panel UI ──────────────────────────────────────────────
+  _buildDetailBtns() {
+    this._detailBtns = [];
+    const obj  = this._selObj?.objRef;
+    if (!obj) return;
+    const subs = obj.subOptions;
+
+    if (subs && this._selSubIdx === null) {
+      // Show the two sub-option buttons
+      subs.forEach((sub, i) => {
+        this._detailBtns.push({
+          x: 320, y: 380 + i * 50, w: 384, h: 36,
+          label: sub.label,
+          action: () => {
+            this._selSubIdx = i;
+            this._markSeen();
+            this._buildDetailBtns();
+          },
+        });
+      });
+    } else {
+      // Back button
+      this._detailBtns.push({
+        x: 452, y: 450, w: 120, h: 34,
+        label: "Back",
+        action: () => {
+          if (!subs) this._markSeen(); // no sub-options: mark on Back
+          this._selObj    = null;
+          this._selSubIdx = null;
+          this._phase     = "web";
+          this._detailBtns = [];
+        },
+      });
+    }
+  }
+
+  _markSeen() {
+    if (!this._selObj) return;
+    const name = this._selObj.objRef.name;
+    if (this._seenSet.has(name)) return;
+    this._seenSet.add(name);
+    this._selObj.clicked = true;
+
+    const total = (this._config?.objects || []).length;
+    if (this._seenSet.size >= total) {
+      // All seen — fire callback after a short delay so render finishes
+      this.active = false;
+      setTimeout(() => this.onAllSeen?.(), 120);
+    }
+  }
+
+  _drawDetailPanel() {
+    const obj  = this._selObj?.objRef;
+    if (!obj) return;
+    const subs = obj.subOptions;
+
+    push();
+    // Semi-transparent dark overlay
+    fill(0, 0, 0, 180);
+    noStroke();
+    rect(0, 0, width, height);
+
+    // Panel box
+    fill(20, 18, 25, 230);
+    stroke(180, 190, 220, 160);
+    strokeWeight(1);
+    rect(220, 120, 584, 360, 6);
+
+    // Title
+    if (this._font) textFont(this._font);
+    noStroke();
+    fill(200, 210, 255);
+    textSize(20);
+    textAlign(LEFT, TOP);
+    text(obj.name.toUpperCase(), 240, 138);
+
+    // Main text
+    fill(210, 210, 220);
+    textSize(16);
+    textWrap(WORD);
+    const bodyText = (subs && this._selSubIdx !== null)
+      ? subs[this._selSubIdx].text
+      : obj.text;
+    text(bodyText, 240, 172, 544, 180);
+
+    // Buttons
+    for (const btn of this._detailBtns) {
+      fill(40, 36, 52);
+      stroke(160, 170, 200, 180);
+      strokeWeight(1);
+      rect(btn.x, btn.y, btn.w, btn.h, 4);
+      noStroke();
+      fill(210, 215, 255);
+      textSize(15);
+      textAlign(CENTER, CENTER);
+      text(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
+    }
+    pop();
+  }
+
+  // ── start screen ────────────────────────────────────────────────
+  _drawStartScreen() {
+    const bw = 260, bh = 52;
+    const bx = width / 2 - bw / 2, by = height / 2 - bh / 2;
+    const hovered = mouseX > bx && mouseX < bx + bw && mouseY > by && mouseY < by + bh;
+    push();
+    stroke(200, 210, 255, hovered ? 255 : 160);
+    strokeWeight(1);
+    fill(12, 12, 18, hovered ? 200 : 140);
+    rect(bx, by, bw, bh, 4);
+    noStroke();
+    fill(200, 210, 255, hovered ? 255 : 200);
+    textAlign(CENTER, CENTER);
+    textSize(16);
+    if (this._font) textFont(this._font);
+    text("WEB VISION ACTIVATE", width / 2, height / 2);
+    pop();
+  }
+
+  // ── object images ────────────────────────────────────────────────
+  _drawObjects() {
+    if (!this._threadsBuilt) return;
+    for (const rec of this._rects) {
+      if (rec.threadProgress < 1) continue;
+      const img = rec.clicked ? rec.objRef._imgFull : rec.objRef._imgLine;
+      if (!img) continue;
+      const d = rec.objRef.img;
+      push();
+      image(img, d.x, d.y, d.w, d.h);
+      pop();
+    }
+  }
+
+  // ── web generation ───────────────────────────────────────────────
+  _generateWeb() {
+    this._rects      = [];
+    this._webPoints  = [];
+    this._segStyles  = [];
+    this._rings      = floor(random(8, 15));
+    this._spokes     = floor(random(9, 18));
+    this._noiseOff   = random(1000);
+    this._progress   = 0;
+    this._animating  = true;
+    this._threadsBuilt = false;
+
+    const cx = this._config?.webCenter?.x ?? width  * 0.53;
+    const cy = this._config?.webCenter?.y ?? height * 0.36;
+    const maxR = max(width, height) * 0.82;
+
+    let angles = [], running = 0;
+    for (let s = 0; s < this._spokes; s++) {
+      running += (TWO_PI / this._spokes) * random(0.55, 1.6);
+      angles.push(running);
+    }
+    const norm = TWO_PI / running;
+    angles = angles.map((a) => a * norm);
+
+    for (let s = 0; s < this._spokes; s++) {
+      const col = [], lenMult = random(0.7, 1.15);
+      for (let r = 0; r <= this._rings; r++) {
+        const t            = r / this._rings;
+        const radWobble    = map(noise(this._noiseOff + s * 0.7, r * 0.5), 0, 1, 0.75, 1.28);
+        const rad          = t * maxR * lenMult * radWobble;
+        const latDrift     = map(noise(this._noiseOff + s * 1.3, r * 0.9 + 99), 0, 1, -0.12, 0.12) * t;
+        col.push({
+          x: cx + cos(angles[s] + latDrift) * rad,
+          y: cy + sin(angles[s] + latDrift) * rad,
+          dx: 0, dy: 0,
+        });
+      }
+      this._webPoints.push(col);
+    }
+
+    for (let r = 1; r <= this._rings; r++) {
+      const row = [];
+      for (let s = 0; s < this._spokes; s++)
+        row.push({ alphaMult: random(0.75, 1.1), weightMult: random(0.6, 1.4), sag: random(0.04, 0.14) });
+      this._segStyles.push(row);
+    }
+
+    for (const obj of (this._config?.objects || [])) {
+      if (!obj.img || (obj.img.w === 0 && obj.img.h === 0)) continue;
+      const d = obj.img;
+      const pts = [
+        { x: d.x,       y: d.y       },
+        { x: d.x + d.w, y: d.y       },
+        { x: d.x,       y: d.y + d.h },
+        { x: d.x + d.w, y: d.y + d.h },
+      ];
+      this._rects.push({
+        quad: pts,
+        w: d.w, h: d.h,
+        threads: [], threadProgress: 0,
+        objRef: obj,
+        clicked: false,
+      });
+      this._deformWeb(d.x + d.w / 2, d.y + d.h / 2, d.w, d.h);
+    }
+  }
+
+  _deformWeb(cx, cy, w, h) {
+    const hw = w / 2, hh = h / 2;
+    const halfMax   = max(hw, hh);
+    const influence = max(w, h) * 2.2;
+    for (const col of this._webPoints) {
+      for (const pt of col) {
+        const d = dist(cx, cy, pt.x, pt.y);
+        if (d < influence) {
+          const force = d < halfMax
+            ? map(d, 0, halfMax, 18, 6)
+            : map(d, halfMax, influence, -3, 0);
+          const angle = atan2(pt.y - cy, pt.x - cx);
+          pt.dx += cos(angle) * force;
+          pt.dy += sin(angle) * force;
+        }
+      }
+    }
+  }
+
+  _buildThreadsQuad(pts, w, h) {
+    const threads  = [];
+    const maxDist  = max(width, height) * 0.3;
+    const [tl, tr, bl, br] = pts;
+    const anchors  = [];
+    const area     = w * h;
+    const steps    = area < 2000 ? 2 : area < 6000 ? 3 : 5;
+    const perAnchor = area < 2000 ? 1 : area < 6000 ? 2 : 3;
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      anchors.push([lerp(tl.x, tr.x, t), lerp(tl.y, tr.y, t)]);
+      anchors.push([lerp(bl.x, br.x, t), lerp(bl.y, br.y, t)]);
+      anchors.push([lerp(tl.x, bl.x, t), lerp(tl.y, bl.y, t)]);
+      anchors.push([lerp(tr.x, br.x, t), lerp(tr.y, br.y, t)]);
+    }
+
+    for (const [ax, ay] of anchors) {
+      const candidates = [];
+      for (const col of this._webPoints) {
+        for (const pt of col) {
+          const d = dist(ax, ay, pt.x, pt.y);
+          if (d < maxDist) candidates.push({ pt, d });
+        }
+      }
+      candidates.sort((a, b) => a.d - b.d);
+      for (const { pt, d } of candidates.slice(0, perAnchor)) {
+        threads.push({
+          ax, ay,
+          bx: pt.x + random(-6, 6), by: pt.y + random(-6, 6),
+          sag:    random(0.04, 0.16),
+          alpha:  map(d, 0, maxDist, 200, 40),
+          weight: random(0.3, 0.8),
+        });
+      }
+    }
+    return threads;
+  }
+
+  // ── web drawing ──────────────────────────────────────────────────
+  _drawWeb() {
+    noFill();
+    const spokeT    = min(1, this._progress / 0.35);
+    const showSpokes = floor(spokeT * this._spokes);
+    const spokeFrac  = (spokeT * this._spokes) % 1;
+
+    for (let s = 0; s < showSpokes + 1; s++) {
+      if (s >= this._spokes) break;
+      const frac = s < showSpokes ? 1 : spokeFrac;
+      for (let r = 0; r < this._rings; r++) {
+        const t = r / this._rings;
+        stroke(200, 210, 255, lerp(210, 45, t));
+        strokeWeight(lerp(1.4, 0.35, t));
+        const ax = this._webPoints[s][r].x   + this._webPoints[s][r].dx;
+        const ay = this._webPoints[s][r].y   + this._webPoints[s][r].dy;
+        const bx = this._webPoints[s][r+1].x + this._webPoints[s][r+1].dx;
+        const by = this._webPoints[s][r+1].y + this._webPoints[s][r+1].dy;
+        line(ax, ay, lerp(ax, bx, frac), lerp(ay, by, frac));
+        if (frac < 1) break;
+      }
+    }
+
+    const ringT    = this._progress > 0.35 ? min(1, (this._progress - 0.35) / 0.65) : 0;
+    const showRings = floor(ringT * this._rings);
+    const ringFrac  = (ringT * this._rings) % 1;
+
+    for (let r = 1; r <= showRings + 1; r++) {
+      if (r > this._rings) break;
+      const frac     = r <= showRings ? 1 : ringFrac;
+      const t        = r / this._rings;
+      const baseA    = lerp(185, 35, t);
+      const baseW    = lerp(1.0, 0.3, t);
+      const segsShow = floor(frac * this._spokes);
+      const segFrac  = (frac * this._spokes) % 1;
+
+      for (let s = 0; s < segsShow + 1; s++) {
+        if (s >= this._spokes) break;
+        const sf   = s < segsShow ? 1 : segFrac;
+        const next  = (s + 1) % this._spokes;
+        const style = this._segStyles[r - 1][s];
+        const ax    = this._webPoints[s][r].x    + this._webPoints[s][r].dx;
+        const ay    = this._webPoints[s][r].y    + this._webPoints[s][r].dy;
+        const nbx   = this._webPoints[next][r].x + this._webPoints[next][r].dx;
+        const nby   = this._webPoints[next][r].y + this._webPoints[next][r].dy;
+        const bx    = lerp(ax, nbx, sf), by = lerp(ay, nby, sf);
+
+        stroke(200, 210, 255, baseA * style.alphaMult);
+        strokeWeight(baseW * style.weightMult);
+
+        const mx = (ax + bx) / 2, my = (ay + by) / 2;
+        const dx = bx - ax, dy = by - ay;
+        const len = sqrt(dx*dx + dy*dy) || 1;
+
+        beginShape();
+        vertex(ax, ay);
+        quadraticVertex(
+          mx + (-dy/len)*len*style.sag*sf,
+          my + ( dx/len)*len*style.sag*sf,
+          bx, by,
+        );
+        endShape();
+      }
+    }
+
+    // Center dot
+    noStroke();
+    fill(210, 215, 255, 200);
+    if (this._webPoints[0]?.[0]) {
+      circle(this._webPoints[0][0].x, this._webPoints[0][0].y, 4);
+    }
+  }
+
+  _drawRects() {
+    for (const rec of this._rects) {
+      noFill();
+      const p = rec.threadProgress ?? 1;
+      for (const th of rec.threads) {
+        stroke(200, 210, 255, th.alpha);
+        strokeWeight(th.weight);
+        const ex  = lerp(th.ax, th.bx, p), ey = lerp(th.ay, th.by, p);
+        const emx = (th.ax + ex) / 2,      emy = (th.ay + ey) / 2;
+        const edx = ex - th.ax,             edy = ey - th.ay;
+        const elen = sqrt(edx*edx + edy*edy) || 1;
+        beginShape();
+        vertex(th.ax, th.ay);
+        quadraticVertex(
+          emx + (-edy/elen)*elen*th.sag*p,
+          emy + ( edx/elen)*elen*th.sag*p,
+          ex, ey,
+        );
+        endShape();
+      }
+    }
+  }
+
+  // ── helpers ──────────────────────────────────────────────────────
+  _ptInImg(px, py, d) {
+    return px >= d.x && px <= d.x + d.w && py >= d.y && py <= d.y + d.h;
+  }
+}
+
 // ── expose globals ────────────────────────────────────────────────
-window.PA_InvestigateManager = PA_InvestigateManager;
-window.DIA_OptionManager = DIA_OptionManager;
-window.PA_GameManager = PA_GameManager;
-window.PA_DinnerManager = PA_DinnerManager;
-window.PR_MusicSearchManager = PR_MusicSearchManager;
+window.PA_InvestigateManager    = PA_InvestigateManager;
+window.DIA_OptionManager        = DIA_OptionManager;
+window.PA_GameManager           = PA_GameManager;
+window.PA_DinnerManager         = PA_DinnerManager;
+window.PR_MusicSearchManager    = PR_MusicSearchManager;
+window.PA_WebInvestigateManager = PA_WebInvestigateManager;
