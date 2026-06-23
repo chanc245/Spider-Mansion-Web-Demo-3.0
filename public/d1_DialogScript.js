@@ -12,56 +12,706 @@ soundEffect — plays via AudioManager (BGM, ambience, one-shot SFX)
 stopSound — stops a sound; can be a path string or { path, fadeMs }
 fadeSoundMs — fade duration in ms when used alongside stopSound
 diaAudio — voiceover file for this line (plays on the isolated private channel)
+
+BRANCHING
+option.branchId — when set, sketch.js handles routing instead of resumeFromOption()
 */
 
-// ALL SCRIPTS
-// - d1_vnScript_morning
-// - d1_vnScript_lunch
-// - d1_vnScript_afternoon
-// - d1_vnScript_dinner
-// - d1_vnScript_night
+// ALL SCRIPTS — Day 1
+// d1_vnScript_morning         → up to the leave/investigate branch
+// d1_vnScript_kitchen         → shared by both morning branches
+// d1_vnScript_lunch
+// d1_vnScript_afternoon_pre   → ends when kitchen investigation starts
+// d1_vnScript_afternoon_post  → after Cook kicks you out
+// d1_vnScript_dinner_pre      → linear VN before character options loop
+// d1_dinner_characters        → data for the dinner DIA_OPTION loop
+// d1_vnScript_dinner_post
+// d1_vnScript_night_pre       → before music search
+// d1_vnScript_night_dining    → after finding the dining room, before quiz
+// d1_vnScript_night_postQuiz  → after quiz resolves
 
-// const exampleString = [
-//   {
-//     charName: " ",
-//     charCG: "assets/charImg/char_ara_smiling.png",
-//     bg: "assets/bg/bg_BlackOut.png",
-//     text: "",
-//     diaAudio: "d0_dia_01.mp3",
-//     soundEffect: "assets/audio/dia_step.mp3",
-// },
-// ];
+// ─── MORNING ──────────────────────────────────────────────────────────────────
 
 const d1_vnScript_morning = [
   {
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
-    text: "You awaken to the sound of birds chattering outside your window. You realize it is time to do your duty – wake Eva up.",
     soundEffect: "assets/audio/dia_birdChatter.mp3",
+    text: "You awaken to the sound of birds chattering outside your window. You realize it is time to do your duty – wake Eva up.",
   },
   {
     charName: " ",
-    // charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Eva is still peacefully asleep in her bed. Sensing the gentle awakening from you, she pulls the blanket up to hide herself slightly beneath it.",
-    diaAudio: "d0_dia_01.mp3",
-    soundEffect: "assets/audio/dia_step.mp3",
+  },
+  {
+    charName: " ",
+    text: "You quietly open the curtains. The bright sunlight streams into the room.",
+  },
+  {
+    charName: " ",
+    text: "The light rouses Eva, who slowly wakes up and rubs her eyes, still half-asleep.",
   },
   {
     option: {
-      prompt: "What do you do?",
       choices: [
-        { label: "Wake Eva gently", text: "You softly call her name." },
-        { label: "Open the curtains", text: "You quietly open the curtains." },
+        {
+          label: "Waking Eva up",
+          text: "Eva is still peacefully asleep in her bed. Sensing the gentle awakening from you, she pulls the blanket up to hide herself slightly beneath it.",
+        },
+        {
+          label: "Open the curtains",
+          text: "You quietly open the curtains, the bright sunlight streams into the room.",
+        },
+      ],
+    },
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_sleepy.png",
+    text: "Okay, okay, I'm awake.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_sleepy.png",
+    soundEffect: "assets/audio/dia_evaSmallYawn.mp3",
+    text: "Eva responds with a small yawn, still appearing a bit sleepy.",
+  },
+  {
+    charName: " ",
+    text: "You help her wash her face and get dressed.",
+  },
+  {
+    charName: " ",
+    text: "Letting her sit in front of the mirror, you carefully comb her silky, long blonde hair, which is as light and delicate as a spider web.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "As you comb, you notice how fragile she looks, with a small body that doesn't resemble a lady living in a wealthy mansion.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "Instead, she appears more like a young maid deprived of nutritious meals, her slight frame making her seem younger than her age.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "You suddenly feel a pair of eyes on you and realize that Eva is watching you through the reflection in the mirror.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_blushing.png",
+    text: "Caught in the moment, she has a look of embarrassment on her face.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_blushing.png",
+    soundEffect: "assets/audio/dia_evaStomachGrowls.mp3",
+    text: "Just as you open your mouth to apologize, Eva's stomach growls loudly.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_blushing.png",
+    text: "...",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_blushing.png",
+    text: "You check the time and realize it's almost time for a meal, but the food hasn't arrived in Eva's room yet.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "Oh, it's fine. I'm not really hungry. I can just skip the meal.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "She says with a smile, but her growling stomach tells a different story.",
+  },
+  {
+    charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "You realize the cook must've forgotten the meal. You tell Eva you'll fetch the food from the kitchen.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "You, you don't have to… but if you say so.",
+  },
+  // branchId handled in sketch.js:
+  //   idx 0 → d1_vnScript_kitchen directly
+  //   idx 1 → PA_WEB_INVESTIGATE (attic) → then d1_vnScript_kitchen
+  {
+    option: {
+      branchId: "d1_morning_room",
+      choices: [
+        { label: "Leave the room", text: "You head straight to the kitchen." },
+        {
+          label: "Investigate the attic",
+          text: "You decide to look around the attic first.",
+        },
+      ],
+    },
+  },
+];
+
+// ─── KITCHEN (morning, shared by both branches) ───────────────────────────────
+
+const d1_vnScript_kitchen = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pa_1f_Kitchen.png",
+    text: "You enter the kitchen and find the cook preparing a meal. On the table, you see a well-made dish.",
+  },
+  {
+    charName: " ",
+    text: "When you reach for the plate, Cook Harris yells at you aggressively.",
+  },
+  {
+    charName: "Cook",
+    text: "Hey! What do you think you're touching with your filthy hands?",
+  },
+  {
+    charName: " ",
+    text: "You explain that you came for Lady Eva's meal.",
+  },
+  {
+    charName: "Cook",
+    text: "Ah right, you're that newbie who's that girl's nanny. You know, that girl doesn't really prefer to eat around this early.",
+  },
+  // Both choices converge at the same Cook response — purely flavor.
+  {
+    option: {
+      choices: [
+        {
+          label: "Tell him you still want to bring the meal",
+          text: "You tell Cook Harris you still want to bring the meal.",
+        },
+        {
+          label: "Tell him Eva seemed hungry",
+          text: "You tell Cook Harris that Eva seemed to be hungry.",
+        },
+      ],
+    },
+  },
+  {
+    charName: "Cook",
+    text: "Then bring those leftovers or whatever.",
+  },
+  {
+    charName: " ",
+    text: "Cook Harris points at a bucket filled with inedible scraps.",
+  },
+  {
+    charName: " ",
+    text: "You feel disgusted. Both by the food and Cook Harris's reaction.",
+  },
+  {
+    charName: "Cook",
+    text: "Bring that food or get out of my face. I have to serve this gorgeous meal to the master.",
+  },
+  {
+    charName: " ",
+    text: "The cook leaves the room with a well-decorated plate, clearly intended for Eva's father.",
+  },
+  {
+    charName: " ",
+    text: "Determined not to serve that garbage to Eva, you decide to prepare a fresh meal using ingredients in the kitchen.",
+  },
+  {
+    charName: " ",
+    text: "There must be some edible ones if you look around.",
+  },
+  {
+    charName: " ",
+    text: "After looking around, you decide to cook some soup with the very limited ingredients you have found.",
+  },
+  // sketch.js starts PA_GAME here when this script finishes
+];
+
+// ─── LUNCH ────────────────────────────────────────────────────────────────────
+
+const d1_vnScript_lunch = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pa_3f_Attic.png",
+    text: "You bring the meal up to Eva's room.",
+  },
+  {
+    charName: " ",
+    text: "You see Eva holding a book, but instead of reading it, she is staring into a corner of her room, her mind seemingly wandering off somewhere.",
+  },
+  {
+    charName: " ",
+    text: "You follow her gaze to the corner and find it covered in dust and spiderwebs.",
+  },
+  {
+    charName: " ",
+    text: "Before you can call her, she catches the smell of food and turns to you.",
+  },
+  {
+    charName: " ",
+    text: "Her face brightens with a smile, looking more excited to see you than the food itself.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_happy.png",
+    text: "Wow, you came back! I didn't expect you to actually bring something. Thank you so much!",
+  },
+  {
+    charName: " ",
+    text: "You ask her what she was looking at in that corner, and she suddenly looks a little sad.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "I had a friend who also really liked a corner like that.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_happy.png",
+    text: "Wow, this tastes so great! Thank you. It's been a while since I had a nice meal like this.",
+  },
+  {
+    charName: " ",
+    text: "You ask what she means.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "Oh… I mean, I haven't been receiving any food for lunch until you came.",
+  },
+  {
+    charName: " ",
+    text: "Eva's voice lowers as she speaks, and she looks a little guilty as well.",
+  },
+  {
+    charName: " ",
+    text: "You already have a feeling why Eva didn't eat Cook Harris's meal after seeing what he showed you.",
+  },
+  {
+    charName: " ",
+    text: "You think back to what Cook Harris said. He seemed to be ignoring Eva's existence entirely.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "It is true that I didn't eat the meal Mr. Harris prepared for me.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "As I haven't touched food for a while, Mr. Harris probably thinks I'm not hungry.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "So I don't mind too much! I'm fine with it.",
+  },
+  {
+    charName: " ",
+    text: "You sense there might be more to Eva's situation after witnessing Cook Harris's attitude. You consider asking her about it.",
+  },
+  // Both choices converge — flavor only.
+  {
+    option: {
+      choices: [
+        {
+          label: "Ask if the cook's food made her uncomfortable",
+          text: "You ask Eva if the cook's treatment had been making her uncomfortable.",
+        },
+        {
+          label: "Tell her you worry about her",
+          text: "You tell her you worry about her.",
+        },
+      ],
+    },
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "Thanks for being thoughtful of me. But I'm really fine!",
+  },
+  {
+    charName: " ",
+    text: "Eva responds with a smile. It seems rather reluctant.",
+  },
+  {
+    charName: " ",
+    text: "Despite your concern for Eva's well-being, you decide to give her some space and wait patiently for her to finish her meal.",
+  },
+];
+
+// ─── AFTERNOON ────────────────────────────────────────────────────────────────
+
+// Plays before the kitchen investigation state.
+const d1_vnScript_afternoon_pre = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pa_3f_Attic.png",
+    text: "Eva finished her meal and looked happy.",
+  },
+  {
+    charName: " ",
+    text: "Now it's time for you to attend to your duties as a nanny. You gather the finished plate and prepare to take it back to the kitchen.",
+  },
+  {
+    charName: "Eva",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "I'll be in my room reading books.",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pa_1f_Kitchen.png",
+    text: "You tidy her room up a bit and bring the plates back down to the kitchen.",
+  },
+  // sketch.js starts PA_WEB_INVESTIGATE (kitchen) when this script finishes
+];
+
+// Plays after the kitchen investigation (Cook kicks you out).
+const d1_vnScript_afternoon_post = [
+  {
+    charName: "Cook",
+    bg: "assets/bg/bg_pa_1f_Kitchen.png",
+    text: "Hey you! What are you doing here? Be gone if you're done with your chores!",
+  },
+  {
+    charName: " ",
+    text: "You were kicked out of the kitchen.",
+  },
+  {
+    charName: " ",
+    text: "…",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "After doing some more chores, it's already time for dinner, so you quickly head to the dining room.",
+  },
+];
+
+// ─── DINNER ───────────────────────────────────────────────────────────────────
+
+// Linear VN before the character-options loop starts.
+const d1_vnScript_dinner_pre = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pa_1f_Dining.png",
+    text: "The Von Silken family has a tradition that everyone must gather in the dining room to eat dinner together.",
+  },
+  {
+    charName: " ",
+    text: "All the workers must be present as well, standing by the wall and ready to serve.",
+  },
+  {
+    charName: " ",
+    text: "You quietly stand alongside the other servants.",
+  },
+  {
+    charName: "Master",
+    text: "Why is the food taking so long?",
+  },
+  {
+    charName: "Lady Master",
+    text: "Why don't you try to be more patient?",
+  },
+  {
+    charName: "Master",
+    text: "Huh, what do you mean? I AM patient.",
+  },
+  {
+    charName: "Mistress",
+    text: "Honey, the food will come soon if we wait a little longer. Let's be understanding.",
+  },
+  {
+    charName: "Master",
+    text: "Hmm, sure my dear. It'll come any second.",
+  },
+  // sketch.js starts the dinner DIA_OPTION loop when this script finishes
+];
+
+// Each entry's `script` plays as DIA_VN when that character is chosen.
+// sketch.js loops through this until "Return to position" is picked.
+const d1_dinner_characters = [
+  {
+    id: "ladyMaster",
+    label: "Lady Master",
+    script: [
+      {
+        charName: "Lady Master",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "Take care of that little girl, since her real mother doesn't seem to care.",
+      },
+    ],
+  },
+  {
+    id: "mistress",
+    label: "Mistress",
+    script: [
+      {
+        charName: " ",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "(She's not interested in you. She's focused on talking to the Master.)",
+      },
+    ],
+  },
+  {
+    id: "master",
+    label: "Master",
+    script: [
+      {
+        charName: " ",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "(He's not interested in you; he's focused on talking to the Mistress.)",
+      },
+    ],
+  },
+  {
+    id: "eva",
+    label: "Eva",
+    script: [
+      {
+        charName: "Eva",
+        charCG: "assets/charImg/char_eva_happy.png",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "Look! I usually get a good meal for dinner.",
+      },
+      {
+        charName: " ",
+        text: "Eva looks at you and gives you a bright smile.",
+      },
+      {
+        charName: " ",
+        text: "You observed her food quality is slightly worse than the others', but you don't mention it.",
+      },
+    ],
+  },
+  {
+    id: "cook",
+    label: "Cook",
+    script: [
+      {
+        charName: "Cook",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "If I don't serve that little girl's meal even in front of Master Von Silken, it will seem too obvious.",
+      },
+    ],
+  },
+  {
+    id: "gardener",
+    label: "Gardener",
+    script: [
+      {
+        charName: "Gardener",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "Brother is right. Even though everyone is ignoring her, we still have to treat her somewhat like royalty.",
+      },
+    ],
+  },
+  {
+    id: "headMaid",
+    label: "Head Maid",
+    script: [
+      {
+        charName: "Head Maid",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "Stop wandering around and stay in your position!",
+      },
+      {
+        charName: "Head Maid",
+        text: "(mumbling) And every night, I still cannot understand why everyone needs to be in this dinner place while I could be resting. Instead, we are just watching them eat…",
+      },
+    ],
+  },
+];
+
+const d1_vnScript_dinner_post = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "After cleaning the kitchen, you have your own meal and fall asleep.",
+  },
+];
+
+// ─── NIGHT ────────────────────────────────────────────────────────────────────
+
+// Plays before PR_MUSIC_SEARCH.
+const d1_vnScript_night_pre = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "You wake to the sound of a music box playing.",
+  },
+  {
+    charName: "You",
+    text: "What is that sound from the hallway?",
+  },
+  {
+    charName: " ",
+    text: "The sound of the music box was quite distant, echoing in the empty hallway and giving an eerie vibe.",
+  },
+  {
+    charName: "You",
+    text: "I should go check where the sound is coming from.",
+  },
+  // sketch.js starts PR_MUSIC_SEARCH when this script finishes
+];
+
+// Plays after the correct room is found. Ends when sketch.js starts the Day 1 quiz.
+const d1_vnScript_night_dining = [
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_1f_Dining.png",
+    text: "As you enter the dining room you see a music box placed on top of the fireplace. It seems that the melody that brought you here was coming from there.",
+  },
+  {
+    charName: "Ara",
+    text: "You're awake. I've been waiting for you.",
+  },
+  {
+    charName: " ",
+    text: "Ara is seated in the master's chair, with a silver dish cover in front of her. Across the table, you notice another covered dish.",
+  },
+  {
+    charName: "Ara",
+    text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
+  },
+  {
+    charName: " ",
+    text: "Eva said with a smile on her face. Unlike the bright and soft smile you saw in the morning, under the moonlight, this smile seems a bit... off.",
+  },
+  {
+    charName: " ",
+    text: "Before you can think more into that idea, somehow, you feel a strong hunger, as if you haven't eaten all day. You sit across from Eva's seat.",
+  },
+  {
+    charName: "Ara",
+    text: "Go on, you must be hungry.",
+  },
+  {
+    charName: " ",
+    text: "Somehow, you don't feel this is a good choice. Your hand trembles as it reaches for the cover.",
+  },
+  // Both choices converge — Ara interrupts either way.
+  {
+    option: {
+      choices: [
+        { label: "Open the cover", text: "You reach for the cover." },
+        {
+          label: "Don't open the cover",
+          text: "You hesitate, hand hovering over it.",
+        },
+      ],
+    },
+  },
+  {
+    charName: "Ara",
+    text: "Ah, I almost forgot! Remember the quiz game we promised to do?",
+  },
+  {
+    charName: " ",
+    text: "You're interrupted in the middle of reaching for the cover. You feel relieved not to have opened it.",
+  },
+  {
+    charName: " ",
+    text: "You briefly recall the promise made last night.",
+  },
+  // sketch.js starts D1_QUIZ when this script finishes
+];
+
+// Plays after the Day 1 quiz is solved.
+const d1_vnScript_night_postQuiz = [
+  {
+    charName: "Ara",
+    bg: "assets/bg/bg_pr_1f_Dining.png",
+    text: "Good that you got this right. As a prize, I'll allow you to open the cover. Bon appétit.",
+  },
+  // Both choices have the same outcome — Ara opens hers regardless.
+  {
+    option: {
+      choices: [
+        {
+          label: "Open the cover",
+          text: "You reach for the cover and lift it.",
+        },
+        {
+          label: "Don't open the cover",
+          text: "Before you can decide, Ara lifts hers.",
+        },
       ],
     },
   },
   {
     charName: " ",
-    // charCG: "assets/charImg/char_ara_smiling.png",
-    bg: "assets/bg/bg_pr_3f_Attic.png",
-    text: "",
-    diaAudio: "d0_dia_01.mp3",
-    soundEffect: "assets/audio/dia_step.mp3",
+    text: "Before even inspecting the contents, you detect a strong rotting odor.",
   },
+  {
+    charName: " ",
+    text: "With a disgusted expression on your face, you feel nauseated and cover your nose.",
+  },
+  {
+    charName: " ",
+    text: "Underneath the cover is a decomposed bird, clearly left untouched for at least a week.",
+  },
+  {
+    charName: " ",
+    text: "You avoid eye contact with the dead bird and instead glance at Eva, sensing a slight feeling of blame towards her for the situation.",
+  },
+  {
+    charName: " ",
+    text: "However, her eyes appear lifeless, conveying only an endless abyss of darkness.",
+  },
+  {
+    charName: " ",
+    text: "You feel something is off. You realize there are no bugs or flies around the body. The room is eerily quiet, with no signs of life other than you and the unnervingly calm girl in front of you.",
+  },
+  {
+    charName: "Ara",
+    text: "Eva used to be served this kind of food. Can you even call that person a competent cook?",
+  },
+  {
+    charName: "Ara",
+    text: "He's just an egotist who is cruel to the weak and submissive to the strong.",
+  },
+  {
+    charName: " ",
+    text: "Then Eva poked the bird's wing with a fork and attempted to take a bite of the dead bird.",
+  },
+  {
+    charName: " ",
+    text: "When you see the scene, your instincts kick in, and you rush over to stop her abruptly.",
+  },
+  {
+    charName: " ",
+    text: "Your sudden, unexpected action surprises Ara. She then gives a satisfied grotesque smile.",
+  },
+  {
+    charName: "Ara",
+    text: "At least you care. Unlike that cook.",
+  },
+  {
+    charName: "Ara",
+    text: "...",
+  },
+  {
+    charName: "Ara",
+    text: "You should go to sleep soon. You must be tired.",
+  },
+  {
+    charName: " ",
+    text: "You don't feel tired, but rather a headache from experiencing so much.",
+  },
+  {
+    charName: "Ara",
+    text: "I'll look forward to tomorrow's quiz.",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    text: "You decide to clean up the mess, escort Eva to her room, and end your day.",
+  },
+  // sketch.js transitions to END (or Day 2) when this script finishes
 ];
