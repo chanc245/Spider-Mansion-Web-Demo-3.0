@@ -579,30 +579,37 @@ const d1_vnScript_night_dining = [
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "You're awake. I've been waiting for you.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Eva is seated in the master's chair, with a silver dish cover in front of her. Across the table, you notice another covered dish.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Eva said with a smile on her face. Unlike the bright and soft smile you saw in the morning, under the moonlight, this smile seems a bit... off.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Before you can think more into that idea, somehow, you feel a strong hunger, as if you haven't eaten all day. You sit across from Eva's seat.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Go on, you must be hungry.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Somehow, you don't feel this is a good choice. Your hand trembles as it reaches for the cover.",
   },
   // Both choices converge — Ara interrupts either way.
@@ -619,14 +626,17 @@ const d1_vnScript_night_dining = [
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Ah, I almost forgot! Remember the quiz game we promised to do?",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "You're interrupted in the middle of reaching for the cover. You feel relieved not to have opened it.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "You briefly recall the promise made last night.",
   },
   // sketch.js starts D1_QUIZ when this script finishes
@@ -654,66 +664,82 @@ const d1_vnScript_night_postQuiz_tail = [
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "Before even inspecting the contents, you detect a strong rotting odor.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "With a disgusted expression on your face, you feel nauseated and cover your nose.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "Underneath the cover is a decomposed bird, clearly left untouched for at least a week.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "You avoid eye contact with the dead bird and instead glance at Eva, sensing a slight feeling of blame towards her for the situation.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_blank.png",
     text: "However, her eyes appear lifeless, conveying only an endless abyss of darkness.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_blank.png",
     text: "You feel something is off. You realize there are no bugs or flies around the body. The room is eerily quiet, with no signs of life other than you and the unnervingly calm girl in front of you.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "Eva used to be served this kind of food. Can you even call that person a competent cook?",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "He's just an egotist who is cruel to the weak and submissive to the strong.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "Then Eva poked the bird's wing with a fork and attempted to take a bite of the dead bird.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "When you see the scene, your instincts kick in, and you rush over to stop her abruptly.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Your sudden, unexpected action surprises Eva. She then gives a satisfied grotesque smile.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "At least you care. Unlike that cook.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "...",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "You should go to sleep soon. You must be tired.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_normal.png",
     text: "You don't feel tired, but rather a headache from experiencing so much.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     text: "I'll look forward to tomorrow's quiz.",
   },
   {
@@ -728,6 +754,7 @@ const d1_vnScript_night_postQuiz_tail = [
 const d1_vnScript_night_postQuiz_Good = [
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "Good that you got this right. As a prize, I'll allow you to open the cover. Bon appétit.",
   },
@@ -739,16 +766,19 @@ const d1_vnScript_night_postQuiz_Good = [
 const d1_vnScript_night_postQuiz_Bad = [
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_blank.png",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "...",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_ara_blank.png",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "She stared at you in silence for a moment too long. Your blood ran cold.",
   },
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_normal.png",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "...Not quite. But it doesn't matter. I'll allow you to open the cover anyway. Bon appétit.",
   },
