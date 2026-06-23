@@ -26,7 +26,7 @@ diaAudio — voiceover file for this line (plays on the isolated private channel
 //     charName: " ",
 //     charCG: "assets/charImg/char_ara_smiling.png",
 //     bg: "assets/bg/bg_BlackOut.png",
-//     text: "This was already shaping up to be an... unusual job.",
+//     text: "",
 //     diaAudio: "d0_dia_01.mp3",
 //     soundEffect: "assets/audio/dia_step.mp3",
 // },
@@ -41,9 +41,26 @@ const d1_vnScript_morning = [
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
-    bg: "assets/bg/bg_BlackOut.png",
-    text: "This was already shaping up to be an... unusual job.",
+    // charCG: "assets/charImg/char_ara_smiling.png",
+    bg: "assets/bg/bg_pr_3f_Attic.png",
+    text: "Eva is still peacefully asleep in her bed. Sensing the gentle awakening from you, she pulls the blanket up to hide herself slightly beneath it.",
+    diaAudio: "d0_dia_01.mp3",
+    soundEffect: "assets/audio/dia_step.mp3",
+  },
+  {
+    option: {
+      prompt: "What do you do?",
+      choices: [
+        { label: "Wake Eva gently", text: "You softly call her name." },
+        { label: "Open the curtains", text: "You quietly open the curtains." },
+      ],
+    },
+  },
+  {
+    charName: " ",
+    // charCG: "assets/charImg/char_ara_smiling.png",
+    bg: "assets/bg/bg_pr_3f_Attic.png",
+    text: "",
     diaAudio: "d0_dia_01.mp3",
     soundEffect: "assets/audio/dia_step.mp3",
   },

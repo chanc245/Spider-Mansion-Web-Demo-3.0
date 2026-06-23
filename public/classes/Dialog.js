@@ -73,12 +73,16 @@ class Dialog {
     this._finished = false;
     this.onFinish = null;
 
+    // Called when a line has an `option` field.
+    // sketch.js sets this to trigger DIA_OPTION state.
+    // Call dialog.resumeFromOption() when the option is resolved.
+    this.onOption = null;
+
     // SFX
     this.clickSfxPath = opts.clickSfxPath ?? "assets/audio/ui_clickDia.mp3";
     this.clickSfxVolume = opts.clickSfxVolume ?? 1.0;
 
-    // Dialogue voiceover — its own private Audio element, fully isolated
-    // from AudioManager so it never conflicts with soundEffect or BGM.
+    // Dialogue voiceover — private Audio element, isolated from AudioManager
     this._diaAudioEl = null;
     this._diaAudioPath = null;
     this.diaAudioVolume = opts.diaAudioVolume ?? 1.0;
@@ -112,7 +116,7 @@ class Dialog {
     this._holdBgUntil = 0;
     this._uiFade.start(0, 255, this.fadeInMs);
     this.alpha = 0;
-    this._applyLine(this.script[this.index], true);
+    this._applyLine(this.script[this.index]);
   }
 
   update() {
@@ -142,16 +146,14 @@ class Dialog {
     const uiA = this.alpha;
     const bgA = this._fadingOut && this._uiOnlyFade ? 255 : uiA;
 
-    // ── Layer order (bottom → top) ────────────────────────────────
     // 1. BG
     this.bg.render(bgA);
-
     if (!this._running && !this._fadingOut && holdingBg) return;
 
     // 2. Character art (CG)
     this.cg.render(uiA);
 
-    // 3. Decorative frame — sits above BG and CG, below text
+    // 3. Decorative frame
     if (this.frameImg) {
       push();
       tint(255, uiA);
@@ -163,7 +165,7 @@ class Dialog {
     push();
     const cur = this.script[this.index] || {};
 
-    // 4. Nameplate — centered at absolute position
+    // 4. Nameplate
     if (cur.charName) {
       const nr = this._nameRect;
       push();
@@ -177,7 +179,7 @@ class Dialog {
       pop();
     }
 
-    // 5. Body text (typewriter) — centered at absolute position
+    // 5. Body text
     const tr = this._textRect;
     const body = this.typer.visibleText;
     if (body) {
@@ -243,7 +245,7 @@ class Dialog {
       this._uiFade.start(this.alpha, 0, this.fadeOutMs);
       return;
     }
-    this._applyLine(this.script[this.index], false);
+    this._applyLine(this.script[this.index]);
 
     if (this.alpha < 200 && !this._fadingOut) {
       this._uiFade.start(this.alpha, 255, Math.max(120, this.fadeInMs * 0.5));
@@ -264,13 +266,47 @@ class Dialog {
     return this._finished;
   }
 
+  // Call this after DIA_OPTION resolves.
+  // If resultText is provided, it is shown as a dialogue line before advancing.
+  resumeFromOption(resultText = null) {
+    if (!this._running) return;
+    if (resultText) {
+      // Splice the result line in, preserving the current BG so it doesn't fade to black.
+      this.script.splice(this.index + 1, 0, {
+        text: resultText,
+        bg: this.bg.curPath || undefined,
+      });
+    }
+    this.index++;
+    if (this.index >= this.script.length) {
+      this.cg.clearInstant();
+      this._fadingOut = true;
+      this._uiOnlyFade = this.preserveBgOnEnd;
+      this._holdBgUntil = millis() + this.holdBgAfterFinishMs;
+      this._uiFade.start(this.alpha, 0, this.fadeOutMs);
+      return;
+    }
+    this._applyLine(this.script[this.index]);
+  }
+
   // —— internals ——
   _applyLine(line) {
-    this.bg.set(line.bg || null);
+    // Option line — pause VN and hand off to onOption handler
+    if (line.option) {
+      if (typeof this.onOption === "function") {
+        this.onOption(line.option);
+      } else {
+        // No handler — skip option line silently
+        this.index++;
+        if (this.index < this.script.length)
+          this._applyLine(this.script[this.index]);
+      }
+      return;
+    }
 
+    this.bg.set(line.bg || null);
     if (line.stopSound) this._stopSoundLine(line);
     if (line.soundEffect && this.audio) this.audio.play(line.soundEffect);
-
     this._playDiaAudio(line.diaAudio ?? null);
 
     const hadCG = !!this.cg.curPath;

@@ -76,6 +76,14 @@
     <button data-state="PR_MUSIC_SEARCH">PR_MUSIC_SEARCH</button>
 
     <span class="sep">|</span>
+    <span class="group-label">script →</span>
+    <button data-script="d0_vnScript">d0_vnScript</button>
+    <button data-script="d0_vnScript_chris">d0_vnScript_chris</button>
+    <button data-script="d0_vnScript_postQuiz_Good">postQuiz_Good</button>
+    <button data-script="d0_vnScript_postQuiz_Bad">postQuiz_Bad</button>
+    <button data-script="d1_vnScript_morning">d1_morning</button>
+
+    <span class="sep">|</span>
     <button id="debug-restart">↺ restart</button>
   `;
   document.body.appendChild(panel);
@@ -172,6 +180,41 @@
           appState = target;
           break;
       }
+    });
+  });
+
+  // ── script jump buttons ─────────────────────────────────────────
+  const scriptMap = {
+    d0_vnScript: () =>
+      typeof d0_vnScript !== "undefined" ? d0_vnScript : null,
+    d0_vnScript_chris: () =>
+      typeof d0_vnScript_chris !== "undefined" ? d0_vnScript_chris : null,
+    d0_vnScript_postQuiz_Good: () =>
+      typeof d0_vnScript_postQuiz_Good !== "undefined"
+        ? d0_vnScript_postQuiz_Good
+        : null,
+    d0_vnScript_postQuiz_Bad: () =>
+      typeof d0_vnScript_postQuiz_Bad !== "undefined"
+        ? d0_vnScript_postQuiz_Bad
+        : null,
+    d1_vnScript_morning: () =>
+      typeof d1_vnScript_morning !== "undefined" ? d1_vnScript_morning : null,
+  };
+
+  panel.querySelectorAll("button[data-script]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.script;
+      const getScript = scriptMap[key];
+      if (!getScript) return;
+      const script = getScript();
+      if (!script) {
+        console.warn("Script not found:", key);
+        return;
+      }
+      if (typeof dialog === "undefined") return;
+      appState = "DIA_VN";
+      dialog.setScript(script);
+      dialog.start();
     });
   });
 

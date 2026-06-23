@@ -90,10 +90,23 @@ function preload() {
   pa_dinnerMgr = new PA_DinnerManager();
   pr_musicSearchMgr = new PR_MusicSearchManager();
 
+  // Wire DIA_OPTION into the VN — when a script line has an `option` field,
+  // Dialog pauses and calls this. After the player chooses, dialog.resumeFromOption()
+  // continues from the next line automatically.
+  dialog.onOption = (optConfig) => {
+    appState = "DIA_OPTION";
+    dia_optionMgr.onFinish = (chosenText) => {
+      appState = "DIA_VN";
+      dialog.resumeFromOption(chosenText ?? null);
+    };
+    dia_optionMgr.start(optConfig);
+  };
+
   // preload assets
   quiz.preload();
   logView.preload();
   dialog.preload();
+  dia_optionMgr.preload();
 }
 
 function setup() {
@@ -106,7 +119,7 @@ function setup() {
 
   if (typeof d0_vnScript === "undefined") {
     console.warn(
-      "d0_vnScript is not defined. Did you include d0_DialogScript.js?",
+      "d0_vnScript is not defined. Did you include dialogScript.js?",
     );
   } else {
     dialog.setScript(d0_vnScript);

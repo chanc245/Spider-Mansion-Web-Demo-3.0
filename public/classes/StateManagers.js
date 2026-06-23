@@ -242,133 +242,300 @@ class PA_InvestigateManager {
   }
 }
 
-// ── OPTION ───────────────────────────────────────────────────────
-// Shows 2–4 choice buttons. Each has a short text response.
-// All paths rejoin the same next VN line (onFinish called after).
+// ── DIA_OPTION ───────────────────────────────────────────────────
+// Spider-web hover option UI.
+// Assets needed:
+//   assets/ui/ui_optionTag_Left.png   (55x35)
+//   assets/ui/ui_optionTag_Right.png  (55x35)
+//   assets/fonts/Forum-Regular.ttf
 //
 // Config example:
 //   dia_optionMgr.start({
-//     prompt: "What do you say?",
 //     choices: [
-//       { label: "Tell the cook you still want the meal.",
-//         text:  "You firmly request the meal for Lady Eva." },
-//       { label: "Tell the cook Eva seemed hungry.",
-//         text:  "You mention that Eva's stomach was growling." },
+//       { label: "Wake Eva gently",   text: "You softly call her name." },
+//       { label: "Open the curtains", text: "You quietly open the curtains." },
 //     ],
 //   });
 
 class DIA_OptionManager {
+  // ── constants ───────────────────────────────────────────────────
+  static TAG_W = 55;
+  static TAG_H = 35;
+  static PAD = 20;
+  static GAP = 10;
+  static OVERFLOW = 12;
+  static EXPAND = 30;
+
   constructor() {
     this.active = false;
-    this.prompt = "";
     this.choices = []; // { label, text }
-    this._result = null; // chosen text, shown before finishing
-    this._phase = "choose"; // "choose" | "result"
+
+    this._result = null;
     this.onFinish = null;
-    this._buttons = [];
+
+    // Layout & web state (reset each start())
+    this._layout = []; // { label, x, y, w }
+    this._webBufs = []; // p5.Graphics per option
+    this._webProg = []; // strand count drawn so far
+
+    // Preloaded assets (set by preload())
+    this._tagLeft = null;
+    this._tagRight = null;
+    this._font = null;
   }
 
+  // Call once after p5 preload — reuses dialog's font if available
+  preload() {
+    this._tagLeft = loadImage("assets/ui/ui_optionTag_Left.png");
+    this._tagRight = loadImage("assets/ui/ui_optionTag_Right.png");
+    // Font is shared with Dialog; load independently here as fallback
+    this._font = loadFont("assets/fonts/Forum-Regular.ttf");
+  }
+
+  // ── start ────────────────────────────────────────────────────────
   start(opts = {}) {
-    this.prompt = opts.prompt ?? "";
     this.choices = opts.choices ?? [];
     this._result = null;
-    this._phase = "choose";
+    this._layout = [];
+    this._webBufs = [];
+    this._webProg = [];
     this.active = true;
-    this._buildButtons();
+    this._computeLayout();
+    this._ensureBuffers();
   }
 
-  update() {}
+  // ── update ───────────────────────────────────────────────────────
+  update() {
+    if (!this.active) return;
+    const { TAG_H, OVERFLOW } = DIA_OptionManager;
 
+    for (let i = 0; i < this._layout.length; i++) {
+      const { x, y, w } = this._layout[i];
+      const hovered =
+        mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + TAG_H;
+      if (hovered) {
+        if (this._webProg[i] < 800) {
+          const burst = this._webProg[i] < 20 ? 12 : 24;
+          this._addWebStrands(
+            this._webBufs[i],
+            burst,
+            i * 77.3 + this._webProg[i] * 0.5,
+          );
+          this._webProg[i] += burst;
+        }
+      } else {
+        if (this._webProg[i] > 0) {
+          this._webBufs[i].clear();
+          this._webProg[i] = 0;
+        }
+      }
+    }
+  }
+
+  // ── render ───────────────────────────────────────────────────────
   render() {
     if (!this.active) return;
 
-    push();
-    fill(0, 0, 0, 160);
-    noStroke();
-    rect(0, 0, width, height);
-
-    fill(240, 230, 220);
-    stroke(100);
-    rect(200, 150, 624, 276, 8);
-
-    fill(40);
-    noStroke();
-    textSize(17);
-    textAlign(LEFT, TOP);
-    textWrap(WORD);
-
-    if (this._phase === "choose") {
-      text(this.prompt, 220, 165, 584, 80);
-      // Buttons rendered via _buttons hit areas — labels drawn here
-      let y = 255;
-      for (const ch of this.choices) {
-        fill(200, 190, 180);
-        stroke(120);
-        rect(220, y, 584, 32, 4);
-        fill(40);
-        noStroke();
-        textSize(15);
-        text(ch.label, 230, y + 8);
-        y += 44;
-      }
-    } else {
-      // Show chosen response text, then a Continue button
-      text(this._result, 220, 165, 584, 200);
+    // Only one phase now — "choose". Result goes straight to Dialog.
+    this._drawBg();
+    for (let i = 0; i < this._layout.length; i++) {
+      this._drawOptionRow(i);
     }
-    pop();
   }
 
+  // ── input ────────────────────────────────────────────────────────
   mousePressed() {
     if (!this.active) return;
-    for (const btn of this._buttons) {
-      if (this._hit(btn)) {
-        btn.action();
-        this._buildButtons();
+
+    const { TAG_H } = DIA_OptionManager;
+    for (let i = 0; i < this._layout.length; i++) {
+      const { x, y, w } = this._layout[i];
+      if (
+        mouseX >= x &&
+        mouseX <= x + w &&
+        mouseY >= y &&
+        mouseY <= y + TAG_H
+      ) {
+        this._result = this.choices[i].text;
+        this.active = false;
+        this._cleanupBuffers();
+        // onFinish receives the chosen text so sketch.js can feed it to Dialog
+        this.onFinish?.(this._result);
         return;
       }
     }
   }
 
-  _hit(btn) {
-    return (
-      mouseX >= btn.x &&
-      mouseX <= btn.x + btn.w &&
-      mouseY >= btn.y &&
-      mouseY <= btn.y + btn.h
-    );
+  // ── layout ───────────────────────────────────────────────────────
+  _computeLayout() {
+    const { TAG_W, TAG_H, PAD, GAP } = DIA_OptionManager;
+
+    // Temporarily apply font for textWidth measurements
+    if (this._font) {
+      push();
+      textFont(this._font);
+      textSize(20);
+    }
+
+    const widths = this.choices.map((ch) => {
+      const tw = textWidth(ch.label);
+      return TAG_W + PAD + tw + PAD + TAG_W;
+    });
+
+    if (this._font) pop();
+
+    const totalH =
+      this.choices.length * TAG_H + (this.choices.length - 1) * GAP;
+    const startY = (height - totalH) / 2;
+
+    this._layout = this.choices.map((ch, i) => ({
+      label: ch.label,
+      x: (width - widths[i]) / 2,
+      y: startY + i * (TAG_H + GAP),
+      w: widths[i],
+    }));
   }
 
-  _buildButtons() {
-    this._buttons = [];
-    if (this._phase === "choose") {
-      let y = 255;
-      for (const ch of this.choices) {
-        const captured = ch;
-        this._buttons.push({
-          x: 220,
-          y,
-          w: 584,
-          h: 32,
-          action: () => {
-            this._result = captured.text;
-            this._phase = "result";
-          },
-        });
-        y += 44;
+  _ensureBuffers() {
+    const { TAG_H, OVERFLOW } = DIA_OptionManager;
+    this._webBufs = this._layout.map((l) =>
+      createGraphics(l.w + OVERFLOW * 2, TAG_H + OVERFLOW * 2),
+    );
+    this._webProg = new Array(this._layout.length).fill(0);
+  }
+
+  _cleanupBuffers() {
+    for (const buf of this._webBufs) buf.remove();
+    this._webBufs = [];
+    this._webProg = [];
+  }
+
+  // ── draw helpers ─────────────────────────────────────────────────
+  _drawBg() {
+    if (!this._layout.length) return;
+    const { EXPAND } = DIA_OptionManager;
+
+    const minX = Math.min(...this._layout.map((o) => o.x));
+    const minY = Math.min(...this._layout.map((o) => o.y));
+    const maxX = Math.max(...this._layout.map((o) => o.x + o.w));
+    const maxY = Math.max(
+      ...this._layout.map((o) => o.y + DIA_OptionManager.TAG_H),
+    );
+
+    const rx = minX - EXPAND,
+      ry = minY - EXPAND;
+    const rw = maxX - minX + EXPAND * 2;
+    const rh = maxY - minY + EXPAND * 2;
+    const cx = rx + rw / 2,
+      cy = ry + rh / 2;
+
+    const ctx = drawingContext;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(rw / 2, rh / 2);
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+    grad.addColorStop(0, "rgba(0,0,0,0.85)");
+    grad.addColorStop(0.6, "rgba(0,0,0,0.70)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(-1, -1, 2, 2);
+    ctx.restore();
+  }
+
+  _drawOptionRow(i) {
+    const { TAG_W, TAG_H, PAD, OVERFLOW } = DIA_OptionManager;
+    const { label, x, y, w } = this._layout[i];
+    const tw = w - TAG_W * 2 - PAD * 2;
+
+    // Spiderweb overlay
+    if (this._webProg[i] > 0 && this._webBufs[i]) {
+      image(this._webBufs[i], x - OVERFLOW, y - OVERFLOW);
+    }
+
+    // Tag images
+    if (this._tagLeft) image(this._tagLeft, x, y, TAG_W, TAG_H);
+    if (this._tagRight)
+      image(this._tagRight, x + TAG_W + PAD + tw + PAD, y, TAG_W, TAG_H);
+
+    // Label text
+    push();
+    if (this._font) textFont(this._font);
+    fill(255);
+    noStroke();
+    textSize(20);
+    textAlign(LEFT, CENTER);
+    text(label, x + TAG_W + PAD, y + TAG_H / 2);
+    pop();
+  }
+
+  // ── web strand generation ────────────────────────────────────────
+  _addWebStrands(buf, count, seed) {
+    const { OVERFLOW } = DIA_OptionManager;
+    const w = buf.width,
+      h = buf.height;
+    buf.noFill();
+
+    // Radial spokes
+    for (let i = 0; i < count; i++) {
+      const ax = OVERFLOW + random(w - OVERFLOW * 2);
+      const ay = OVERFLOW + random(h - OVERFLOW * 2);
+      const spokes = floor(random(2, 5));
+      for (let s = 0; s < spokes; s++) {
+        const angle = (TWO_PI / spokes) * s + noise(seed + i + s) * 1.0;
+        const len = random(4, 18);
+        const ex = ax + cos(angle) * len;
+        const ey = ay + sin(angle) * len;
+        buf.stroke(0, 0, 0, random(140, 230));
+        buf.strokeWeight(random(0.3, 0.9));
+        buf.beginShape();
+        for (let t = 0; t <= 8; t++) {
+          const tt = t / 8;
+          const px = lerp(ax, ex, tt);
+          const py = lerp(ay, ey, tt);
+          const warp = noise(px * 0.1 + seed + i, py * 0.1) * 3 - 1.5;
+          buf.vertex(px + warp, py + warp);
+        }
+        buf.endShape();
       }
-    } else {
-      // Continue button
-      this._buttons.push({
-        x: 680,
-        y: 390,
-        w: 120,
-        h: 30,
-        action: () => {
-          this.active = false;
-          this._buttons = [];
-          this.onFinish?.();
-        },
-      });
+    }
+
+    // Concentric rings
+    for (let i = 0; i < floor(count * 0.4); i++) {
+      const ax = OVERFLOW + random(w - OVERFLOW * 2);
+      const ay = OVERFLOW + random(h - OVERFLOW * 2);
+      for (let r = 1; r <= floor(random(1, 3)); r++) {
+        const radius = r * random(2, 6);
+        buf.stroke(0, 0, 0, random(80, 160));
+        buf.strokeWeight(0.4);
+        buf.beginShape();
+        for (let p = 0; p <= 16; p++) {
+          const angle = (TWO_PI / 16) * p;
+          const px = ax + cos(angle) * radius * random(0.8, 1.1);
+          const py = ay + sin(angle) * radius * random(0.8, 1.1);
+          const warp = noise(px * 0.08 + seed + r, py * 0.08) * 2 - 1;
+          buf.vertex(px + warp, py + warp);
+        }
+        buf.endShape(CLOSE);
+      }
+    }
+
+    // Short crossing threads
+    for (let i = 0; i < floor(count * 1.2); i++) {
+      const sx = OVERFLOW + random(w - OVERFLOW * 2);
+      const sy = OVERFLOW + random(h - OVERFLOW * 2);
+      const angle = random(TWO_PI);
+      const len = random(5, 20);
+      buf.stroke(0, 0, 0, random(60, 150));
+      buf.strokeWeight(random(0.2, 0.5));
+      buf.beginShape();
+      for (let t = 0; t <= 8; t++) {
+        const tt = t / 8;
+        const px = lerp(sx, sx + cos(angle) * len, tt);
+        const py = lerp(sy, sy + sin(angle) * len, tt);
+        const warp = noise(px * 0.09 + seed + i * 0.1, py * 0.09) * 4 - 2;
+        buf.vertex(px + warp, py + warp);
+      }
+      buf.endShape();
     }
   }
 }
