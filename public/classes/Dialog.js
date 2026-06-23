@@ -47,7 +47,7 @@ class Dialog {
     this.cg = new CrossfadeLayer({
       cache: this.cgCache,
       fadeMs: opts.cgFadeMs ?? 250,
-      drawFn: (img) => image(img, 207, 0, 610, 576),
+      drawFn: (img) => image(img, 220, 0, 610, 576),
     });
 
     // Typewriter & arrow

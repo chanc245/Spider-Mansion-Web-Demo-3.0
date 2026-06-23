@@ -23,6 +23,12 @@ diaAudio — voiceover file for this line (plays on the isolated private channel
 const d0_vnScript = [
   {
     charName: "Eva",
+    charCG: "assets/charImg/char_ara_normal.png",
+    bg: "assets/bg/bg_pr_3f_Attic.png",
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea",
+  },
+  {
+    charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "There you are! I’ve been waiting for you.",
