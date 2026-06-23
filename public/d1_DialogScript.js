@@ -578,15 +578,15 @@ const d1_vnScript_night_dining = [
     text: "As you enter the dining room you see a music box placed on top of the fireplace. It seems that the melody that brought you here was coming from there.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "You're awake. I've been waiting for you.",
   },
   {
     charName: " ",
-    text: "Ara is seated in the master's chair, with a silver dish cover in front of her. Across the table, you notice another covered dish.",
+    text: "Eva is seated in the master's chair, with a silver dish cover in front of her. Across the table, you notice another covered dish.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
   },
   {
@@ -598,7 +598,7 @@ const d1_vnScript_night_dining = [
     text: "Before you can think more into that idea, somehow, you feel a strong hunger, as if you haven't eaten all day. You sit across from Eva's seat.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "Go on, you must be hungry.",
   },
   {
@@ -618,7 +618,7 @@ const d1_vnScript_night_dining = [
     },
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "Ah, I almost forgot! Remember the quiz game we promised to do?",
   },
   {
@@ -647,7 +647,7 @@ const d1_vnScript_night_postQuiz_tail = [
         },
         {
           label: "Don't open the cover",
-          text: "Before you can decide, Ara lifts hers.",
+          text: "Before you can decide, Eva lifts hers.",
         },
       ],
     },
@@ -677,11 +677,11 @@ const d1_vnScript_night_postQuiz_tail = [
     text: "You feel something is off. You realize there are no bugs or flies around the body. The room is eerily quiet, with no signs of life other than you and the unnervingly calm girl in front of you.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "Eva used to be served this kind of food. Can you even call that person a competent cook?",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "He's just an egotist who is cruel to the weak and submissive to the strong.",
   },
   {
@@ -694,18 +694,18 @@ const d1_vnScript_night_postQuiz_tail = [
   },
   {
     charName: " ",
-    text: "Your sudden, unexpected action surprises Ara. She then gives a satisfied grotesque smile.",
+    text: "Your sudden, unexpected action surprises Eva. She then gives a satisfied grotesque smile.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "At least you care. Unlike that cook.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "...",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "You should go to sleep soon. You must be tired.",
   },
   {
@@ -713,7 +713,7 @@ const d1_vnScript_night_postQuiz_tail = [
     text: "You don't feel tired, but rather a headache from experiencing so much.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     text: "I'll look forward to tomorrow's quiz.",
   },
   {
@@ -727,7 +727,7 @@ const d1_vnScript_night_postQuiz_tail = [
 // Got the quiz right — Ara is pleased.
 const d1_vnScript_night_postQuiz_Good = [
   {
-    charName: "Ara",
+    charName: "Eva",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "Good that you got this right. As a prize, I'll allow you to open the cover. Bon appétit.",
   },
@@ -738,7 +738,7 @@ const d1_vnScript_night_postQuiz_Good = [
 // wording — slightly "off" like Day 0's bad path; edit freely.)
 const d1_vnScript_night_postQuiz_Bad = [
   {
-    charName: "Ara",
+    charName: "Eva",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "...",
   },
@@ -748,7 +748,7 @@ const d1_vnScript_night_postQuiz_Bad = [
     text: "She stared at you in silence for a moment too long. Your blood ran cold.",
   },
   {
-    charName: "Ara",
+    charName: "Eva",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "...Not quite. But it doesn't matter. I'll allow you to open the cover anyway. Bon appétit.",
   },

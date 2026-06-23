@@ -79,7 +79,9 @@ class Day0QuizLog {
     this._maxLinesPerBox = Math.floor(this.h1 / this.leading);
 
     // dayKey selects which EVA_CONFIGS entry to use ("day0", "day1", …)
-    const prefix = this._dayKey === "day0" ? "Eva" : "Ara";
+    // The host is always shown as "Eva" for now — her true name (Ara) is a
+    // later reveal and must not appear in the UI yet.
+    const prefix = "Eva";
     this.eva = new EvaAI(this._dayKey, { prefix, icon: "--" });
     this.inputLimit = this.eva.maxQuestions;
 
