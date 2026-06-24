@@ -208,7 +208,7 @@ class Dialog {
     // 6. Blinking advance indicator (spider image, anchored bottom-right)
     if (!this.typer.typing && uiA > 0 && this.arrowImg) {
       const aw = 24, ah = 24;
-      const ax = 843, ay = 525;
+      const ax = 843, ay = 522;
       push();
       tint(255, Math.min(255, this.arrow.alpha * (uiA / 255)));
       image(this.arrowImg, ax - aw, ay - ah, aw, ah);

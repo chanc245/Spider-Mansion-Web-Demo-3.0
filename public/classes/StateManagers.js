@@ -1483,7 +1483,7 @@ class PA_WebInvestigateManager {
     // Blinking advance indicator (spider image, anchored bottom-right)
     if (!this._typer.typing && this._arrowImg) {
       tint(255, this._arrow.alpha);
-      image(this._arrowImg, 843 - 24, 525 - 24, 24, 24);
+      image(this._arrowImg, 843 - 24, 525 - 30, 24, 24);
       noTint();
     }
     pop();
