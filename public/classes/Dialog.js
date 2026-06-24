@@ -76,6 +76,7 @@ class Dialog {
     this._running = false;
     this._finished = false;
     this.onFinish = null;
+    this._nextScript = null; // queued script to cross-dissolve into when this one ends
 
     // Called when a line has an `option` field.
     // sketch.js sets this to trigger DIA_OPTION state.
@@ -105,6 +106,14 @@ class Dialog {
     this.script = Array.isArray(lines) ? lines.slice() : [];
     this.index = 0;
     this._finished = false;
+    this._nextScript = null;
+  }
+
+  // Seamlessly continue into `script` when the current one ends: the last line
+  // cross-dissolves into the first line of `script` instead of fading out to
+  // black and fading back in. Used to chain scenes/days without a black flash.
+  queueNext(lines) {
+    this._nextScript = Array.isArray(lines) ? lines.slice() : [];
   }
 
   start() {
@@ -260,6 +269,16 @@ class Dialog {
 
     this.index++;
     if (this.index >= this.script.length) {
+      // Seamlessly continue into a queued script: cross-dissolve the last line
+      // into the next script's first line (no fade-out-to-black + fade-in).
+      if (this._nextScript) {
+        this.script = this._nextScript;
+        this._nextScript = null;
+        this.index = 0;
+        this._finished = false;
+        this._applyLine(this.script[0]);
+        return;
+      }
       this.cg.clearInstant();
       this._fadingOut = true;
       this._uiOnlyFade = this.preserveBgOnEnd;
@@ -297,6 +316,7 @@ class Dialog {
     this._uiOnlyFade = false;
     this._holdBgUntil = 0;
     this._finished = true;
+    this._nextScript = null;
   }
 
   // Call this after DIA_OPTION resolves.

@@ -287,12 +287,18 @@ class DIA_OptionManager {
     // the dinner option loop runs after the VN has faded out).
     this._bgCache = {};
     this._bgImg = null;
+
+    // Optional prompt/question drawn above the choices (e.g. music search).
+    this._prompt = null;
   }
 
   // Call once after p5 preload — reuses dialog's font if available
   preload() {
     this._tagLeft = loadImage("assets/ui/ui_optionTag_Left.png");
     this._tagRight = loadImage("assets/ui/ui_optionTag_Right.png");
+    // Same decorative frame the VN uses — drawn on top when this manager owns
+    // the screen (its own bg, i.e. the VN has faded out, e.g. the dinner loop).
+    this._frameImg = loadImage("assets/ui/ui_decor_frame.png");
     // Font is shared with Dialog; load independently here as fallback
     this._font = loadFont("assets/fonts/Forum-Regular.ttf");
   }
@@ -306,6 +312,8 @@ class DIA_OptionManager {
   // opts.bg — optional full-screen background path (cached via preloadBg)
   start(opts = {}) {
     this.choices = opts.choices ?? [];
+    this._columns = Math.max(1, opts.columns ?? 1); // multi-column option grid
+    this._prompt = opts.prompt ?? null;             // optional question header
     this._result = null;
     this._layout = [];
     this._webBufs = [];
@@ -355,8 +363,17 @@ class DIA_OptionManager {
 
     // Only one phase now — "choose". Result goes straight to Dialog.
     this._drawBg();
+    if (this._prompt) this._drawPrompt();
     for (let i = 0; i < this._layout.length; i++) {
       this._drawOptionRow(i);
+    }
+
+    // Decorative frame on top — only when WE painted the bg (the VN has faded
+    // out, so it isn't drawing its own frame behind us, e.g. the dinner loop).
+    if (this._bgImg && this._frameImg) {
+      push();
+      image(this._frameImg, 0, 0, width, height);
+      pop();
     }
   }
 
@@ -401,16 +418,31 @@ class DIA_OptionManager {
 
     if (this._font) pop();
 
-    const totalH =
-      this.choices.length * TAG_H + (this.choices.length - 1) * GAP;
+    // Grid layout: fill each column top-to-bottom (column-major). With cols=1
+    // this is identical to the old single centered column.
+    const cols = this._columns ?? 1;
+    const n = this.choices.length;
+    const rows = Math.ceil(n / cols);
+
+    const COL_GAP = 50;
+    const maxW = Math.max(...widths);
+    const colSpacing = maxW + COL_GAP; // distance between column centers
+    const firstColCenter = width / 2 - (colSpacing * (cols - 1)) / 2;
+
+    const totalH = rows * TAG_H + (rows - 1) * GAP;
     const startY = (height - totalH) / 2;
 
-    this._layout = this.choices.map((ch, i) => ({
-      label: ch.label,
-      x: (width - widths[i]) / 2,
-      y: startY + i * (TAG_H + GAP),
-      w: widths[i],
-    }));
+    this._layout = this.choices.map((ch, i) => {
+      const col = Math.floor(i / rows);
+      const row = i % rows;
+      const cx = firstColCenter + col * colSpacing;
+      return {
+        label: ch.label,
+        x: cx - widths[i] / 2,
+        y: startY + row * (TAG_H + GAP),
+        w: widths[i],
+      };
+    });
   }
 
   _ensureBuffers() {
@@ -428,6 +460,22 @@ class DIA_OptionManager {
   }
 
   // ── draw helpers ─────────────────────────────────────────────────
+  // Question/header centered above the option tags (e.g. music search).
+  _drawPrompt() {
+    if (!this._layout.length) return;
+    const minY = Math.min(...this._layout.map((o) => o.y));
+    push();
+    if (this._font) textFont(this._font);
+    textAlign(CENTER, BOTTOM);
+    textSize(28);
+    noStroke();
+    fill(0, 0, 0, 180);            // soft shadow for readability
+    text(this._prompt, width / 2 + 2, minY - 32);
+    fill(240);
+    text(this._prompt, width / 2, minY - 34);
+    pop();
+  }
+
   _drawBg() {
     if (!this._layout.length) return;
     const { EXPAND } = DIA_OptionManager;

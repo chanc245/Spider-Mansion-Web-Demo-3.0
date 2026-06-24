@@ -192,19 +192,6 @@ function preload() {
   // ── Wire DIA_OPTION into the VN ───────────────────────────────
   // Options with a branchId are routed manually; plain options resume the script.
   dialog.onOption = (optConfig) => {
-    if (optConfig.branchId === "d1_morning_room") {
-      appState = "DIA_OPTION";
-      dia_optionMgr.onFinish = (_text, idx) => {
-        if (idx === 1 && D1_ATTIC_OBJECTS.length > 0) {
-          startPA_WebInvestigate(D1_ATTIC_WEB_CONFIG, () => startD1Kitchen());
-        } else {
-          startD1Kitchen();
-        }
-      };
-      dia_optionMgr.start(optConfig);
-      return;
-    }
-
     // Default: resume from next script line after option resolves.
     // Pass the chosen option's text so it's spliced in as a narration line
     // (the "option result text" feature) — without it, plain options like the
@@ -223,8 +210,9 @@ function preload() {
   logView1.preload();
   dialog.preload();
   dia_optionMgr.preload();
-  // Dinner options run after the VN fades out, so they draw their own bg.
-  dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Dining.png");
+  // Option screens that run after the VN fades out draw their own bg.
+  dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Dining.png"); // dinner talk
+  dia_optionMgr.preloadBg("assets/bg/bg_BlackOut.png");     // music search
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -264,7 +252,11 @@ function setup() {
     const startGoodVN = () => {
       quiz.onScrollEnd = null;
       dialog.setScript(d0_vnScript_postQuiz_Good);
-      dialog.onFinish = () => { appState = "END"; };
+      // Day 0 flows straight into Day 1 with no end screen and no black flash:
+      // the last line cross-dissolves into Day 1's opening (which is on black).
+      // After the morning, continue to the kitchen.
+      dialog.onFinish = () => startD1Kitchen();
+      dialog.queueNext(d1_vnScript_morning);
       appState = "DIA_VN";
       dialog.start();
     };
@@ -279,7 +271,10 @@ function setup() {
     const startBadVN = () => {
       quiz.onScrollEnd = null;
       dialog.setScript(d0_vnScript_postQuiz_Bad);
-      dialog.onFinish = () => { appState = "END"; };
+      // Day 0 flows straight into Day 1 (no end screen, no black flash).
+      // After the morning, continue to the kitchen.
+      dialog.onFinish = () => startD1Kitchen();
+      dialog.queueNext(d1_vnScript_morning);
       appState = "DIA_VN";
       dialog.start();
     };
@@ -411,7 +406,7 @@ function startDay1() {
   showQuizAfterDialog = false;
   appState = "DIA_VN";
   dialog.setScript(d1_vnScript_morning);
-  dialog.onFinish = null; // morning ends with a branching option, not onFinish
+  dialog.onFinish = () => startD1Kitchen(); // morning → straight to the kitchen
   dialog.start();
 }
 
@@ -493,7 +488,8 @@ function startD1DinnerOptions() {
     }
   };
   // bg: the VN has faded out by now, so the option screen paints its own bg.
-  dia_optionMgr.start({ choices, bg: "assets/bg/bg_pa_1f_Dining.png" });
+  // columns: 2 — only here, lay the (many) character options out in two columns.
+  dia_optionMgr.start({ choices, bg: "assets/bg/bg_pa_1f_Dining.png", columns: 2 });
 }
 
 function startD1Night() {
@@ -503,16 +499,35 @@ function startD1Night() {
   dialog.start();
 }
 
+// Music search — presented as a DIA_OPTION (spider-web tags), looping until the
+// correct room is chosen. Wrong picks show their result in the VN dialogue box,
+// then re-offer the rooms.
 function startD1MusicSearch() {
-  appState = "PR_MUSIC_SEARCH";
-  pr_musicSearchMgr.onFound = () => startD1NightDining();
-  pr_musicSearchMgr.start({
-    rooms: [
-      { id: "nanny",  label: "Your Room",  correct: false },
-      { id: "attic",  label: "Attic",       correct: false },
-      { id: "dining", label: "Dining Room", correct: true  },
-    ],
-    wrongText: "You don't hear any sound here.",
+  const SEARCH_BG  = "assets/bg/bg_BlackOut.png";
+  const WRONG_TEXT = "You don't hear any sound here.";
+  const rooms = [
+    { label: "Your Room",   correct: false },
+    { label: "Attic",       correct: false },
+    { label: "Dining Room", correct: true  },
+  ];
+
+  appState = "DIA_OPTION";
+  dia_optionMgr.onFinish = (_text, idx) => {
+    if (rooms[idx] && rooms[idx].correct) {
+      // Found the source — continue to the dining-room reveal.
+      startD1NightDining();
+    } else {
+      // Wrong room: show the result in the dialogue box, then re-offer rooms.
+      appState = "DIA_VN";
+      dialog.setScript([{ charName: " ", bg: SEARCH_BG, text: WRONG_TEXT }]);
+      dialog.onFinish = () => startD1MusicSearch();
+      dialog.start();
+    }
+  };
+  dia_optionMgr.start({
+    choices: rooms.map((r) => ({ label: r.label, text: r.label })),
+    bg: SEARCH_BG,
+    prompt: "Where is the sound coming from?",
   });
 }
 

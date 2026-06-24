@@ -37,6 +37,9 @@ const d1_vnScript_morning = [
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
     soundEffect: "assets/audio/dia_birdChatter.mp3",
+    // Day 0's looping BGM is still playing here — fade it out as Day 1 begins.
+    stopSound: "assets/audio/bg_ara.mp3",
+    fadeSoundMs: 1500,
     text: "You awaken to the sound of birds chattering outside your window. You realize it is time to do your duty – wake Eva up.",
   },
   {
@@ -141,21 +144,12 @@ const d1_vnScript_morning = [
     charCG: "assets/charImg/char_eva_smiling.png",
     text: "You, you don't have to… but if you say so.",
   },
-  // branchId handled in sketch.js:
-  //   idx 0 → d1_vnScript_kitchen directly
-  //   idx 1 → PA_WEB_INVESTIGATE (attic) → then d1_vnScript_kitchen
   {
-    option: {
-      branchId: "d1_morning_room",
-      choices: [
-        { label: "Leave the room", text: "You head straight to the kitchen." },
-        {
-          label: "Investigate the attic",
-          text: "You decide to look around the attic first.",
-        },
-      ],
-    },
+    charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
+    text: "You head straight to the kitchen.",
   },
+  // Morning ends → sketch.js continues to the kitchen (d1_vnScript_kitchen).
 ];
 
 // ─── KITCHEN (morning, shared by both branches) ───────────────────────────────
