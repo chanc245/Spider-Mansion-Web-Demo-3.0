@@ -51,14 +51,16 @@
     ["Good Ending VN", () => {
       showQuizAfterDialog = false;
       dialog.setScript(d0_vnScript_postQuiz_Good);
-      dialog.onFinish = () => { appState = "END"; };
+      dialog.onFinish = () => startD1Kitchen(); // morning → kitchen
+      dialog.queueNext(d1_vnScript_morning); // seamless chain into Day 1 (no black flash)
       appState = "DIA_VN";
       dialog.start();
     }],
     ["Bad Ending VN", () => {
       showQuizAfterDialog = false;
       dialog.setScript(d0_vnScript_postQuiz_Bad);
-      dialog.onFinish = () => { appState = "END"; };
+      dialog.onFinish = () => startD1Kitchen(); // morning → kitchen
+      dialog.queueNext(d1_vnScript_morning); // seamless chain into Day 1 (no black flash)
       appState = "DIA_VN";
       dialog.start();
     }],
@@ -117,6 +119,40 @@
   };
 
   // ─────────────────────────────────────────────────────────────────
+  // STAGE TRACKING
+  // Wrap the top-level flow functions so the panel shows which narrative
+  // section we're in — updated even when the game advances on its own (via
+  // dialog.onFinish), not just when a debug button is clicked.
+  // (Sub-states like the mini-game / investigation / quiz show via `state`.)
+  // ─────────────────────────────────────────────────────────────────
+  const STAGE_FNS = {
+    startDay1:                 "1 · Morning",
+    startD1Kitchen:            "2 · Kitchen",
+    startD1PostCook:           "2c · Post-Cook",
+    startD1Lunch:              "3 · Lunch (attic)",
+    startD1Afternoon:          "4 · Afternoon",
+    startD1KitchenInvestigate: "5 · Kitchen Investigate",
+    startD1Dinner:             "6 · Dinner",
+    startD1DinnerOptions:      "7 · Dinner Talk",
+    startD1Night:              "8 · Night",
+    startD1MusicSearch:        "9 · Music Search",
+    startD1NightDining:        "10 · Night Dining",
+    startD1Quiz:               "11 · Day 1 Quiz",
+    startD1NightPostQuiz:      "12 · Post-Quiz",
+  };
+  Object.entries(STAGE_FNS).forEach(([name, label]) => {
+    const orig = window[name];
+    if (typeof orig !== "function") {
+      console.warn("[debug] stage fn not found (won't auto-track):", name);
+      return;
+    }
+    window[name] = function (...args) {
+      window.__dbgStage = label;
+      return orig.apply(this, args);
+    };
+  });
+
+  // ─────────────────────────────────────────────────────────────────
   // STYLES
   // ─────────────────────────────────────────────────────────────────
   const style = document.createElement("style");
@@ -163,6 +199,17 @@
       line-height: 1;
       padding: 0 2px;
     }
+    #dbg-stage {
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #9a9aa8;
+      border-top: 1px solid #2c2c34;
+      background: rgba(255,255,255,0.02);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #dbg-stage b { color: #ffd479; font-weight: 700; }
     #dbg-body { padding: 8px 10px 10px; max-height: 60vh; overflow-y: auto; }
     #dbg.collapsed #dbg-body { display: none; }
     #dbg.collapsed { width: auto; }
@@ -222,6 +269,12 @@
   `;
   panel.appendChild(head);
 
+  // stage bar (always visible, even when collapsed)
+  const stageBar = document.createElement("div");
+  stageBar.id = "dbg-stage";
+  stageBar.innerHTML = `stage: <b id="dbg-stage-val">–</b>`;
+  panel.appendChild(stageBar);
+
   const body = document.createElement("div");
   body.id = "dbg-body";
   panel.appendChild(body);
@@ -243,6 +296,7 @@
       if (accent) b.classList.add("accent");
       b.addEventListener("click", (e) => {
         e.stopPropagation();
+        window.__dbgStage = isScript ? "iso · " + text : text;
         if (isScript) call(text, () => runScriptByName(handler));
         else call(text, handler);
       });
@@ -285,9 +339,11 @@
   };
   head.addEventListener("click", toggle);
 
-  // ── live state badge ─────────────────────────────────────────────
+  // ── live state + stage badges ────────────────────────────────────
   const stateEl = document.getElementById("dbg-state");
+  const stageValEl = document.getElementById("dbg-stage-val");
   setInterval(() => {
     if (typeof appState !== "undefined") stateEl.textContent = appState;
+    stageValEl.textContent = window.__dbgStage || "–";
   }, 120);
 })();
