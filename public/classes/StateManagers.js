@@ -577,22 +577,22 @@ class DIA_OptionManager {
 
 class PA_GameManager {
   constructor() {
-    this.active   = false;
-    this.gameId   = null;
+    this.active = false;
+    this.gameId = null;
     this.onFinish = null;
 
     // assets (filled by preload)
-    this._img      = null;
+    this._img = null;
     this._goodImgs = [];
-    this._badImgs  = [];
-    this._font     = null;
+    this._badImgs = [];
+    this._font = null;
 
     // tunables
-    this.TARGET = 10;   // net good-catches needed to fill the bar
+    this.TARGET = 10; // net good-catches needed to fill the bar
     this.FOOD_W = 120;
     this.FOOD_H = 120;
-    this.POT_W  = 150;
-    this.POT_H  = 150;
+    this.POT_W = 150;
+    this.POT_H = 150;
 
     // progress-bar geometry (top of frame, inside the border)
     this.BAR_X = 150;
@@ -606,9 +606,9 @@ class PA_GameManager {
     const base = "assets/mini_game/day1_kichen/";
     this._font = loadFont("assets/fonts/PixelMillennium.ttf"); // pixel font (Maid-to-Work)
     this._img = {
-      bg:    loadImage(base + "bg_chore1_kitchen.png"),
+      bg: loadImage(base + "bg_chore1_kitchen.png"),
       frame: loadImage(base + "bg_frame.png"),
-      pot:   loadImage(base + "item_pot.png"),
+      pot: loadImage(base + "item_pot.png"),
     };
     this._goodImgs = [
       loadImage(base + "food_good_carrot.png"),
@@ -623,15 +623,15 @@ class PA_GameManager {
   }
 
   start(opts = {}) {
-    this.gameId    = opts.id ?? "unknown";
-    this.TARGET    = opts.target ?? this.TARGET;
-    this.active    = true;
+    this.gameId = opts.id ?? "unknown";
+    this.TARGET = opts.target ?? this.TARGET;
+    this.active = true;
     this._finished = false;
     this._progress = 0;
 
     // speed ramp (px per 1/60s, multiplied gradually over time)
     this._fallSpeed = opts.startSpeed ?? 3.2;
-    this._speedRate = opts.speedRate  ?? 1.2; // multiplier accrued per 10s — slight, steady ramp
+    this._speedRate = opts.speedRate ?? 1.2; // multiplier accrued per 10s — slight, steady ramp
     this._speedMult = 1.0;
 
     // pot — sits low; its bottom tucks under the decorative frame
@@ -644,9 +644,9 @@ class PA_GameManager {
 
     // falling items (one good, one bad at a time)
     this._good = this._makeItem(this._goodImgs);
-    this._bad  = this._makeItem(this._badImgs);
+    this._bad = this._makeItem(this._badImgs);
     this._respawn(this._good, this._bad);
-    this._respawn(this._bad,  this._good);
+    this._respawn(this._bad, this._good);
 
     // crisp pixel art: switch the canvas to nearest-neighbour upscaling while
     // the mini-game runs (restored in the ended hand-off so the VN art stays smooth)
@@ -657,41 +657,47 @@ class PA_GameManager {
     if (this._canvasEl) this._canvasEl.style.imageRendering = "pixelated";
 
     // phase: countdown → playing → ended
-    this._phase        = "countdown";
+    this._phase = "countdown";
     this._phaseStartMs = millis();
   }
 
   _makeItem(pool) {
     return {
-      x: 0, y: -this.FOOD_H, w: this.FOOD_W, h: this.FOOD_H,
-      vy: 0, img: null, _pool: pool,
+      x: 0,
+      y: -this.FOOD_H,
+      w: this.FOOD_W,
+      h: this.FOOD_H,
+      vy: 0,
+      img: null,
+      _pool: pool,
     };
   }
 
   // Respawn at top with a random x that doesn't horizontally overlap `other`.
   _respawn(item, other) {
-    let x, tries = 0;
+    let x,
+      tries = 0;
     do {
       x = floor(random(0, width - item.w));
       tries++;
     } while (other && abs(x - other.x) < item.w && tries < 50);
-    item.x   = x;
-    item.y   = -item.h - floor(random(0, 140)); // slight vertical stagger
+    item.x = x;
+    item.y = -item.h - floor(random(0, 140)); // slight vertical stagger
     item.img = random(item._pool);
-    item.vy  = this._fallSpeed * this._speedMult;
+    item.vy = this._fallSpeed * this._speedMult;
   }
 
   update() {
     if (!this.active) return;
     const now = millis();
-    const dt  = deltaTime / 16.667; // frame-rate-independent step
+    const dt = deltaTime / 16.667; // frame-rate-independent step
 
     if (this._phase === "countdown") {
       // 3 → 2 → 1 → Go! (700ms each), then start falling
       if (now - this._phaseStartMs >= 2700) {
-        this._phase        = "playing";
+        this._phase = "playing";
         this._phaseStartMs = now;
-        this._lastSpeedMs  = now;
+        this._lastSpeedMs = now;
       }
       return;
     }
@@ -706,11 +712,11 @@ class PA_GameManager {
       this._speedMult *= Math.pow(this._speedRate, dtMs / 10000);
 
       this._stepItem(this._good, this._bad, dt, true);
-      this._stepItem(this._bad,  this._good, dt, false);
+      this._stepItem(this._bad, this._good, dt, false);
 
       if (this._progress >= this.TARGET) {
-        this._progress     = this.TARGET;
-        this._phase        = "ended";
+        this._progress = this.TARGET;
+        this._phase = "ended";
         this._phaseStartMs = now;
       }
       return;
@@ -720,7 +726,7 @@ class PA_GameManager {
       // hold on the "Success!" banner so it's readable, then hand off
       if (!this._finished && now - this._phaseStartMs >= 1500) {
         this._finished = true;
-        this.active    = false;
+        this.active = false;
         if (this._canvasEl) this._canvasEl.style.imageRendering = ""; // restore smooth scaling
         this.onFinish?.();
       }
@@ -746,7 +752,7 @@ class PA_GameManager {
 
     if (hit) {
       if (isGood) this._progress = Math.min(this.TARGET, this._progress + 1);
-      else        this._progress = Math.max(0, this._progress - 1);
+      else this._progress = Math.max(0, this._progress - 1);
       this._respawn(item, other);
       return;
     }
@@ -767,20 +773,22 @@ class PA_GameManager {
 
     // falling food (hidden during the countdown for a clean read)
     if (this._phase !== "countdown") {
-      const g = this._good, b = this._bad;
+      const g = this._good,
+        b = this._bad;
       if (g.img) image(g.img, g.x, g.y, g.w, g.h);
       if (b.img) image(b.img, b.x, b.y, b.w, b.h);
     }
 
     // pot
-    if (this._img?.pot) image(this._img.pot, this._pot.x, this._pot.y, this._pot.w, this._pot.h);
+    if (this._img?.pot)
+      image(this._img.pot, this._pot.x, this._pot.y, this._pot.w, this._pot.h);
 
     // decorative frame border on top of the play area
     if (this._img?.frame) image(this._img.frame, 0, 0, width, height);
 
     this._drawBar();
     if (this._phase === "countdown") this._drawCountdown();
-    if (this._phase === "ended")     this._drawSuccess();
+    if (this._phase === "ended") this._drawSuccess();
 
     drawingContext.imageSmoothingEnabled = true; // restore for other scenes
     pop();
@@ -791,9 +799,9 @@ class PA_GameManager {
     const frac = constrain(this._progress / this.TARGET, 0, 1);
     push();
     noStroke();
-    fill(150, 150, 150);            // track (square corners — pixel style)
+    fill(150, 150, 150); // track (square corners — pixel style)
     rect(x, y, w, h);
-    fill(124, 207, 47);             // green fill
+    fill(124, 207, 47); // green fill
     if (frac > 0) rect(x, y, floor(w * frac), h);
     pop();
   }
@@ -801,10 +809,10 @@ class PA_GameManager {
   _drawCountdown() {
     const elapsed = millis() - this._phaseStartMs;
     let label;
-    if      (elapsed < 700)  label = "3";
+    if (elapsed < 700) label = "3";
     else if (elapsed < 1400) label = "2";
     else if (elapsed < 2100) label = "1";
-    else                     label = "Go!";
+    else label = "Go!";
     push();
     if (this._font) textFont(this._font);
     textAlign(CENTER, CENTER);
@@ -823,7 +831,7 @@ class PA_GameManager {
     textSize(110);
     fill(0, 0, 0, 130);
     text("Success!", width / 2 + 5, height / 2 + 5); // shadow
-    fill(124, 207, 47);                               // green, matches the bar
+    fill(124, 207, 47); // green, matches the bar
     text("Success!", width / 2, height / 2);
     pop();
   }
@@ -1174,10 +1182,10 @@ class PR_MusicSearchManager {
 //   });
 
 class PA_WebInvestigateManager {
-  static ANIM_SPEED        = 0.05;
+  static ANIM_SPEED = 0.05;
   static THREAD_ANIM_SPEED = 0.15;
-  static DIM_ALPHA         = 180;
-  static DIM_FADE_SPEED    = 20;
+  static DIM_ALPHA = 180;
+  static DIM_FADE_SPEED = 20;
 
   // Description text box geometry — matches Dialog's VN text region.
   static TEXT_RECT = { x: 195, y: 450, w: 640, h: 100 };
@@ -1187,7 +1195,7 @@ class PA_WebInvestigateManager {
     "It seems like I have investigated all the items you are interested in.";
 
   constructor() {
-    this.active    = false;
+    this.active = false;
     this.onAllSeen = null;
 
     // Runtime state
@@ -1196,54 +1204,54 @@ class PA_WebInvestigateManager {
     // "option" — an item with subOptions is being chosen (oval chooser)
     // "detail" — an item's description shows in the VN text box
     // "complete" — the final "all investigated" line, then hand off
-    this._phase      = "start";
-    this._config     = null;
-    this._bgImg      = null;
+    this._phase = "start";
+    this._config = null;
+    this._bgImg = null;
 
     // Description text box (reuses VN-style typewriter + blinking arrow)
-    this._typer      = new Typewriter({ charMs: 20, punctExtraMs: 80 });
-    this._arrow      = new Blinker({ periodMs: 900 });
+    this._typer = new Typewriter({ charMs: 20, punctExtraMs: 80 });
+    this._arrow = new Blinker({ periodMs: 900 });
     this._detailText = "";
 
     // Internal option chooser for items with subOptions (oval + tags UI).
-    this._optionMgr  = new DIA_OptionManager();
+    this._optionMgr = new DIA_OptionManager();
 
     // Decorative frames: investigate frame while scanning, VN frame during text.
     this._investigateFrame = null;
-    this._vnFrame          = null;
+    this._vnFrame = null;
 
     // Advance indicator image (replaces the ">" glyph)
-    this._arrowImg         = null;
+    this._arrowImg = null;
 
     // Web geometry
-    this._rings        = 0;
-    this._spokes       = 0;
-    this._noiseOff     = 0;
-    this._webPoints    = [];
-    this._segStyles    = [];
-    this._rects        = [];
-    this._progress     = 0;
-    this._animating    = false;
+    this._rings = 0;
+    this._spokes = 0;
+    this._noiseOff = 0;
+    this._webPoints = [];
+    this._segStyles = [];
+    this._rects = [];
+    this._progress = 0;
+    this._animating = false;
     this._threadsBuilt = false;
-    this._currentDim   = 0;
-    this._fadingIn     = false;
+    this._currentDim = 0;
+    this._fadingIn = false;
 
     // Seen tracking
     this._seenSet = new Set();
 
     // Detail
-    this._selObj       = null; // rect ref currently shown in the text box
+    this._selObj = null; // rect ref currently shown in the text box
 
     // Asset cache (preloaded by caller)
     this._imgCache = {};
-    this._font     = null;
+    this._font = null;
   }
 
   // Call in main preload() for each config you plan to use.
   preload(config) {
     if (!config) return;
     if (config.bg) this._imgCache[config.bg] = loadImage(config.bg);
-    for (const obj of (config.objects || [])) {
+    for (const obj of config.objects || []) {
       if (obj.imgLine) this._imgCache[obj.imgLine] = loadImage(obj.imgLine);
       if (obj.imgFull) this._imgCache[obj.imgFull] = loadImage(obj.imgFull);
     }
@@ -1253,31 +1261,33 @@ class PA_WebInvestigateManager {
     if (!this._vnFrame)
       this._vnFrame = loadImage("assets/ui/ui_decor_frame.png");
     if (!this._investigateFrame)
-      this._investigateFrame = loadImage("assets/ui/ui_investigate_decor_frame.png");
+      this._investigateFrame = loadImage(
+        "assets/ui/ui_investigate_decor_frame.png",
+      );
     if (!this._arrowImg)
       this._arrowImg = loadImage("assets/ui/ui_text_spiderBlinker.png");
     if (!this._optionMgr._tagLeft) this._optionMgr.preload();
   }
 
   start(config) {
-    this._config       = config;
-    this._bgImg        = this._imgCache[config.bg] || null;
-    this._phase        = "start";
-    this._progress     = 0;
-    this._animating    = false;
+    this._config = config;
+    this._bgImg = this._imgCache[config.bg] || null;
+    this._phase = "start";
+    this._progress = 0;
+    this._animating = false;
     this._threadsBuilt = false;
-    this._currentDim   = 0;
-    this._fadingIn     = false;
-    this._rects        = [];
-    this._webPoints    = [];
-    this._segStyles    = [];
-    this._seenSet      = new Set();
-    this._selObj       = null;
-    this._detailText   = "";
+    this._currentDim = 0;
+    this._fadingIn = false;
+    this._rects = [];
+    this._webPoints = [];
+    this._segStyles = [];
+    this._seenSet = new Set();
+    this._selObj = null;
+    this._detailText = "";
     this._optionMgr.active = false;
 
     // Attach cached images to each object
-    for (const obj of (config.objects || [])) {
+    for (const obj of config.objects || []) {
       obj._imgLine = this._imgCache[obj.imgLine] || null;
       obj._imgFull = this._imgCache[obj.imgFull] || null;
     }
@@ -1305,7 +1315,10 @@ class PA_WebInvestigateManager {
 
     if (this._phase !== "web") return;
 
-    if (this._fadingIn && this._currentDim < PA_WebInvestigateManager.DIM_ALPHA) {
+    if (
+      this._fadingIn &&
+      this._currentDim < PA_WebInvestigateManager.DIM_ALPHA
+    ) {
       this._currentDim = Math.min(
         PA_WebInvestigateManager.DIM_ALPHA,
         this._currentDim + PA_WebInvestigateManager.DIM_FADE_SPEED,
@@ -1321,7 +1334,7 @@ class PA_WebInvestigateManager {
         this._animating = false;
         if (!this._threadsBuilt) {
           for (const rec of this._rects) {
-            rec.threads        = this._buildThreadsQuad(rec.quad, rec.w, rec.h);
+            rec.threads = this._buildThreadsQuad(rec.quad, rec.w, rec.h);
             rec.threadProgress = 0;
           }
           this._threadsBuilt = true;
@@ -1390,9 +1403,9 @@ class PA_WebInvestigateManager {
 
     // "start": any click activates web vision.
     if (this._phase === "start") {
-      this._phase      = "web";
+      this._phase = "web";
       this._currentDim = 0;
-      this._fadingIn   = true;
+      this._fadingIn = true;
       this._generateWeb();
       return;
     }
@@ -1400,7 +1413,10 @@ class PA_WebInvestigateManager {
     // "web": click a revealed object → its description (or sub-option chooser).
     if (this._phase === "web" && this._threadsBuilt) {
       for (const rec of this._rects) {
-        if (rec.threadProgress >= 1 && this._ptInImg(mouseX, mouseY, rec.objRef.img)) {
+        if (
+          rec.threadProgress >= 1 &&
+          this._ptInImg(mouseX, mouseY, rec.objRef.img)
+        ) {
           this._selObj = rec;
           const subs = rec.objRef.subOptions;
           if (subs && subs.length) {
@@ -1427,7 +1443,11 @@ class PA_WebInvestigateManager {
 
     // "detail" / "complete": advance the text box.
     if (this._phase === "detail" || this._phase === "complete") {
-      if (this._typer.typing) { this._typer.revealAll(); this._arrow.reset(); return; }
+      if (this._typer.typing) {
+        this._typer.revealAll();
+        this._arrow.reset();
+        return;
+      }
       if (this._phase === "complete") {
         // Final line dismissed — hand off to the next scene (afternoon/dinner).
         this.active = false;
@@ -1441,7 +1461,7 @@ class PA_WebInvestigateManager {
         this._beginText(PA_WebInvestigateManager.DONE_LINE);
       } else {
         this._selObj = null;
-        this._phase  = "web";
+        this._phase = "web";
       }
       return;
     }
@@ -1518,21 +1538,22 @@ class PA_WebInvestigateManager {
 
   // ── web generation ───────────────────────────────────────────────
   _generateWeb() {
-    this._rects      = [];
-    this._webPoints  = [];
-    this._segStyles  = [];
-    this._rings      = floor(random(8, 15));
-    this._spokes     = floor(random(9, 18));
-    this._noiseOff   = random(1000);
-    this._progress   = 0;
-    this._animating  = true;
+    this._rects = [];
+    this._webPoints = [];
+    this._segStyles = [];
+    this._rings = floor(random(8, 15));
+    this._spokes = floor(random(9, 18));
+    this._noiseOff = random(1000);
+    this._progress = 0;
+    this._animating = true;
     this._threadsBuilt = false;
 
-    const cx = this._config?.webCenter?.x ?? width  * 0.53;
+    const cx = this._config?.webCenter?.x ?? width * 0.53;
     const cy = this._config?.webCenter?.y ?? height * 0.36;
     const maxR = max(width, height) * 0.82;
 
-    let angles = [], running = 0;
+    let angles = [],
+      running = 0;
     for (let s = 0; s < this._spokes; s++) {
       running += (TWO_PI / this._spokes) * random(0.55, 1.6);
       angles.push(running);
@@ -1541,16 +1562,31 @@ class PA_WebInvestigateManager {
     angles = angles.map((a) => a * norm);
 
     for (let s = 0; s < this._spokes; s++) {
-      const col = [], lenMult = random(0.7, 1.15);
+      const col = [],
+        lenMult = random(0.7, 1.15);
       for (let r = 0; r <= this._rings; r++) {
-        const t            = r / this._rings;
-        const radWobble    = map(noise(this._noiseOff + s * 0.7, r * 0.5), 0, 1, 0.75, 1.28);
-        const rad          = t * maxR * lenMult * radWobble;
-        const latDrift     = map(noise(this._noiseOff + s * 1.3, r * 0.9 + 99), 0, 1, -0.12, 0.12) * t;
+        const t = r / this._rings;
+        const radWobble = map(
+          noise(this._noiseOff + s * 0.7, r * 0.5),
+          0,
+          1,
+          0.75,
+          1.28,
+        );
+        const rad = t * maxR * lenMult * radWobble;
+        const latDrift =
+          map(
+            noise(this._noiseOff + s * 1.3, r * 0.9 + 99),
+            0,
+            1,
+            -0.12,
+            0.12,
+          ) * t;
         col.push({
           x: cx + cos(angles[s] + latDrift) * rad,
           y: cy + sin(angles[s] + latDrift) * rad,
-          dx: 0, dy: 0,
+          dx: 0,
+          dy: 0,
         });
       }
       this._webPoints.push(col);
@@ -1559,23 +1595,29 @@ class PA_WebInvestigateManager {
     for (let r = 1; r <= this._rings; r++) {
       const row = [];
       for (let s = 0; s < this._spokes; s++)
-        row.push({ alphaMult: random(0.75, 1.1), weightMult: random(0.6, 1.4), sag: random(0.04, 0.14) });
+        row.push({
+          alphaMult: random(0.75, 1.1),
+          weightMult: random(0.6, 1.4),
+          sag: random(0.04, 0.14),
+        });
       this._segStyles.push(row);
     }
 
-    for (const obj of (this._config?.objects || [])) {
+    for (const obj of this._config?.objects || []) {
       if (!obj.img || (obj.img.w === 0 && obj.img.h === 0)) continue;
       const d = obj.img;
       const pts = [
-        { x: d.x,       y: d.y       },
-        { x: d.x + d.w, y: d.y       },
-        { x: d.x,       y: d.y + d.h },
+        { x: d.x, y: d.y },
+        { x: d.x + d.w, y: d.y },
+        { x: d.x, y: d.y + d.h },
         { x: d.x + d.w, y: d.y + d.h },
       ];
       this._rects.push({
         quad: pts,
-        w: d.w, h: d.h,
-        threads: [], threadProgress: 0,
+        w: d.w,
+        h: d.h,
+        threads: [],
+        threadProgress: 0,
         objRef: obj,
         clicked: false,
       });
@@ -1584,16 +1626,18 @@ class PA_WebInvestigateManager {
   }
 
   _deformWeb(cx, cy, w, h) {
-    const hw = w / 2, hh = h / 2;
-    const halfMax   = max(hw, hh);
+    const hw = w / 2,
+      hh = h / 2;
+    const halfMax = max(hw, hh);
     const influence = max(w, h) * 2.2;
     for (const col of this._webPoints) {
       for (const pt of col) {
         const d = dist(cx, cy, pt.x, pt.y);
         if (d < influence) {
-          const force = d < halfMax
-            ? map(d, 0, halfMax, 18, 6)
-            : map(d, halfMax, influence, -3, 0);
+          const force =
+            d < halfMax
+              ? map(d, 0, halfMax, 18, 6)
+              : map(d, halfMax, influence, -3, 0);
           const angle = atan2(pt.y - cy, pt.x - cx);
           pt.dx += cos(angle) * force;
           pt.dy += sin(angle) * force;
@@ -1603,12 +1647,12 @@ class PA_WebInvestigateManager {
   }
 
   _buildThreadsQuad(pts, w, h) {
-    const threads  = [];
-    const maxDist  = max(width, height) * 0.3;
+    const threads = [];
+    const maxDist = max(width, height) * 0.3;
     const [tl, tr, bl, br] = pts;
-    const anchors  = [];
-    const area     = w * h;
-    const steps    = area < 2000 ? 2 : area < 6000 ? 3 : 5;
+    const anchors = [];
+    const area = w * h;
+    const steps = area < 2000 ? 2 : area < 6000 ? 3 : 5;
     const perAnchor = area < 2000 ? 1 : area < 6000 ? 2 : 3;
 
     for (let i = 0; i <= steps; i++) {
@@ -1630,10 +1674,12 @@ class PA_WebInvestigateManager {
       candidates.sort((a, b) => a.d - b.d);
       for (const { pt, d } of candidates.slice(0, perAnchor)) {
         threads.push({
-          ax, ay,
-          bx: pt.x + random(-6, 6), by: pt.y + random(-6, 6),
-          sag:    random(0.04, 0.16),
-          alpha:  map(d, 0, maxDist, 200, 40),
+          ax,
+          ay,
+          bx: pt.x + random(-6, 6),
+          by: pt.y + random(-6, 6),
+          sag: random(0.04, 0.16),
+          alpha: map(d, 0, maxDist, 200, 40),
           weight: random(0.3, 0.8),
         });
       }
@@ -1644,9 +1690,9 @@ class PA_WebInvestigateManager {
   // ── web drawing ──────────────────────────────────────────────────
   _drawWeb() {
     noFill();
-    const spokeT    = min(1, this._progress / 0.35);
+    const spokeT = min(1, this._progress / 0.35);
     const showSpokes = floor(spokeT * this._spokes);
-    const spokeFrac  = (spokeT * this._spokes) % 1;
+    const spokeFrac = (spokeT * this._spokes) % 1;
 
     for (let s = 0; s < showSpokes + 1; s++) {
       if (s >= this._spokes) break;
@@ -1655,52 +1701,57 @@ class PA_WebInvestigateManager {
         const t = r / this._rings;
         stroke(200, 210, 255, lerp(210, 45, t));
         strokeWeight(lerp(1.4, 0.35, t));
-        const ax = this._webPoints[s][r].x   + this._webPoints[s][r].dx;
-        const ay = this._webPoints[s][r].y   + this._webPoints[s][r].dy;
-        const bx = this._webPoints[s][r+1].x + this._webPoints[s][r+1].dx;
-        const by = this._webPoints[s][r+1].y + this._webPoints[s][r+1].dy;
+        const ax = this._webPoints[s][r].x + this._webPoints[s][r].dx;
+        const ay = this._webPoints[s][r].y + this._webPoints[s][r].dy;
+        const bx = this._webPoints[s][r + 1].x + this._webPoints[s][r + 1].dx;
+        const by = this._webPoints[s][r + 1].y + this._webPoints[s][r + 1].dy;
         line(ax, ay, lerp(ax, bx, frac), lerp(ay, by, frac));
         if (frac < 1) break;
       }
     }
 
-    const ringT    = this._progress > 0.35 ? min(1, (this._progress - 0.35) / 0.65) : 0;
+    const ringT =
+      this._progress > 0.35 ? min(1, (this._progress - 0.35) / 0.65) : 0;
     const showRings = floor(ringT * this._rings);
-    const ringFrac  = (ringT * this._rings) % 1;
+    const ringFrac = (ringT * this._rings) % 1;
 
     for (let r = 1; r <= showRings + 1; r++) {
       if (r > this._rings) break;
-      const frac     = r <= showRings ? 1 : ringFrac;
-      const t        = r / this._rings;
-      const baseA    = lerp(185, 35, t);
-      const baseW    = lerp(1.0, 0.3, t);
+      const frac = r <= showRings ? 1 : ringFrac;
+      const t = r / this._rings;
+      const baseA = lerp(185, 35, t);
+      const baseW = lerp(1.0, 0.3, t);
       const segsShow = floor(frac * this._spokes);
-      const segFrac  = (frac * this._spokes) % 1;
+      const segFrac = (frac * this._spokes) % 1;
 
       for (let s = 0; s < segsShow + 1; s++) {
         if (s >= this._spokes) break;
-        const sf   = s < segsShow ? 1 : segFrac;
-        const next  = (s + 1) % this._spokes;
+        const sf = s < segsShow ? 1 : segFrac;
+        const next = (s + 1) % this._spokes;
         const style = this._segStyles[r - 1][s];
-        const ax    = this._webPoints[s][r].x    + this._webPoints[s][r].dx;
-        const ay    = this._webPoints[s][r].y    + this._webPoints[s][r].dy;
-        const nbx   = this._webPoints[next][r].x + this._webPoints[next][r].dx;
-        const nby   = this._webPoints[next][r].y + this._webPoints[next][r].dy;
-        const bx    = lerp(ax, nbx, sf), by = lerp(ay, nby, sf);
+        const ax = this._webPoints[s][r].x + this._webPoints[s][r].dx;
+        const ay = this._webPoints[s][r].y + this._webPoints[s][r].dy;
+        const nbx = this._webPoints[next][r].x + this._webPoints[next][r].dx;
+        const nby = this._webPoints[next][r].y + this._webPoints[next][r].dy;
+        const bx = lerp(ax, nbx, sf),
+          by = lerp(ay, nby, sf);
 
         stroke(200, 210, 255, baseA * style.alphaMult);
         strokeWeight(baseW * style.weightMult);
 
-        const mx = (ax + bx) / 2, my = (ay + by) / 2;
-        const dx = bx - ax, dy = by - ay;
-        const len = sqrt(dx*dx + dy*dy) || 1;
+        const mx = (ax + bx) / 2,
+          my = (ay + by) / 2;
+        const dx = bx - ax,
+          dy = by - ay;
+        const len = sqrt(dx * dx + dy * dy) || 1;
 
         beginShape();
         vertex(ax, ay);
         quadraticVertex(
-          mx + (-dy/len)*len*style.sag*sf,
-          my + ( dx/len)*len*style.sag*sf,
-          bx, by,
+          mx + (-dy / len) * len * style.sag * sf,
+          my + (dx / len) * len * style.sag * sf,
+          bx,
+          by,
         );
         endShape();
       }
@@ -1721,16 +1772,20 @@ class PA_WebInvestigateManager {
       for (const th of rec.threads) {
         stroke(200, 210, 255, th.alpha);
         strokeWeight(th.weight);
-        const ex  = lerp(th.ax, th.bx, p), ey = lerp(th.ay, th.by, p);
-        const emx = (th.ax + ex) / 2,      emy = (th.ay + ey) / 2;
-        const edx = ex - th.ax,             edy = ey - th.ay;
-        const elen = sqrt(edx*edx + edy*edy) || 1;
+        const ex = lerp(th.ax, th.bx, p),
+          ey = lerp(th.ay, th.by, p);
+        const emx = (th.ax + ex) / 2,
+          emy = (th.ay + ey) / 2;
+        const edx = ex - th.ax,
+          edy = ey - th.ay;
+        const elen = sqrt(edx * edx + edy * edy) || 1;
         beginShape();
         vertex(th.ax, th.ay);
         quadraticVertex(
-          emx + (-edy/elen)*elen*th.sag*p,
-          emy + ( edx/elen)*elen*th.sag*p,
-          ex, ey,
+          emx + (-edy / elen) * elen * th.sag * p,
+          emy + (edx / elen) * elen * th.sag * p,
+          ex,
+          ey,
         );
         endShape();
       }
@@ -1744,9 +1799,9 @@ class PA_WebInvestigateManager {
 }
 
 // ── expose globals ────────────────────────────────────────────────
-window.PA_InvestigateManager    = PA_InvestigateManager;
-window.DIA_OptionManager        = DIA_OptionManager;
-window.PA_GameManager           = PA_GameManager;
-window.PA_DinnerManager         = PA_DinnerManager;
-window.PR_MusicSearchManager    = PR_MusicSearchManager;
+window.PA_InvestigateManager = PA_InvestigateManager;
+window.DIA_OptionManager = DIA_OptionManager;
+window.PA_GameManager = PA_GameManager;
+window.PA_DinnerManager = PA_DinnerManager;
+window.PR_MusicSearchManager = PR_MusicSearchManager;
 window.PA_WebInvestigateManager = PA_WebInvestigateManager;
