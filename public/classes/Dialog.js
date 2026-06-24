@@ -421,7 +421,14 @@ class Dialog {
 
     const hadCG = !!this.cg.curPath;
     if (!line.charCG) {
-      if (hadCG) {
+      if (line.keepCG && hadCG) {
+        // Hold the current character sprite in place (no fade-out). Used for
+        // narration lines mid-conversation so the speaker doesn't blink out.
+        this.cg.prev = null;
+        this.cg.prevPath = null;
+        this.cg._fade.start(255, 255, 1);
+        this.cg.alpha = 255;
+      } else if (hadCG) {
         this.cg.prev = this.cg.cur;
         this.cg.prevPath = this.cg.curPath;
         this.cg.cur = null;

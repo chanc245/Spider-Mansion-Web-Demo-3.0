@@ -278,6 +278,7 @@ const d1_vnScript_lunch = [
   },
   {
     charName: " ",
+    keepCG: true,
     text: "You ask her what she was looking at in that corner, and she suddenly looks a little sad.",
   },
   {
@@ -292,6 +293,7 @@ const d1_vnScript_lunch = [
   },
   {
     charName: " ",
+    keepCG: true,
     text: "You ask what she means.",
   },
   {
@@ -301,14 +303,17 @@ const d1_vnScript_lunch = [
   },
   {
     charName: " ",
+    keepCG: true,
     text: "Eva's voice lowers as she speaks, and she looks a little guilty as well.",
   },
   {
     charName: " ",
+    keepCG: true,
     text: "You already have a feeling why Eva didn't eat Cook Harris's meal after seeing what he showed you.",
   },
   {
     charName: " ",
+    keepCG: true,
     text: "You think back to what Cook Harris said. He seemed to be ignoring Eva's existence entirely.",
   },
   {
@@ -328,6 +333,7 @@ const d1_vnScript_lunch = [
   },
   {
     charName: " ",
+    keepCG: true,
     text: "You sense there might be more to Eva's situation after witnessing Cook Harris's attitude. You consider asking her about it.",
   },
   // Both choices converge — flavor only.
@@ -352,10 +358,12 @@ const d1_vnScript_lunch = [
   },
   {
     charName: " ",
+    keepCG: true,
     text: "Eva responds with a smile. It seems rather reluctant.",
   },
   {
     charName: " ",
+    keepCG: true,
     text: "Despite your concern for Eva's well-being, you decide to give her some space and wait patiently for her to finish her meal.",
   },
 ];
@@ -367,10 +375,12 @@ const d1_vnScript_afternoon_pre = [
   {
     charName: " ",
     bg: "assets/bg/bg_pa_3f_Attic.png",
+    charCG: "assets/charImg/char_eva_happy.png",
     text: "Eva finished her meal and looked happy.",
   },
   {
     charName: " ",
+    keepCG: true,
     text: "Now it's time for you to attend to your duties as a nanny. You gather the finished plate and prepare to take it back to the kitchen.",
   },
   {
@@ -379,6 +389,8 @@ const d1_vnScript_afternoon_pre = [
     text: "I'll be in my room reading books.",
   },
   {
+    // Eva's sprite is intentionally dropped here (no charCG / no keepCG): the bg
+    // moves to the kitchen, so she leaves the frame as the player walks away.
     charName: " ",
     bg: "assets/bg/bg_pa_1f_Kitchen.png",
     text: "You tidy her room up a bit and bring the plates back down to the kitchen.",
