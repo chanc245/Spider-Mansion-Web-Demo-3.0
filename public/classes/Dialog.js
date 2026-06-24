@@ -122,6 +122,15 @@ class Dialog {
     this._uiFade.start(0, 255, this.fadeInMs);
     this.alpha = 0;
     this._applyLine(this.script[this.index]);
+
+    // Show the first scene's bg at full opacity immediately. Combined with the
+    // bgA rule in render(), the bg appears instantly while the CG/text/frame
+    // fade in — no black flash when starting after the quiz or another state.
+    this.bg._fade.value = 255;
+    this.bg._fade.active = false;
+    this.bg.alpha = 255;
+    this.bg.prev = null;
+    this.bg.prevPath = null;
   }
 
   update() {
@@ -149,7 +158,10 @@ class Dialog {
     if (!this._running && !this._fadingOut && !holdingBg) return;
 
     const uiA = this.alpha;
-    const bgA = this._fadingOut && this._uiOnlyFade ? 255 : uiA;
+    // Bg stays solid while the rest of the UI fades in/out, so handing off from
+    // a full-screen state (quiz, investigation) doesn't flash black — the canvas
+    // is cleared each frame, so a fading bg would otherwise rise out of black.
+    const bgA = this._fadingOut && !this._uiOnlyFade ? uiA : 255;
 
     // 1. BG
     this.bg.render(bgA);
