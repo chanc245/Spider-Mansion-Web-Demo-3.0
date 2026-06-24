@@ -150,19 +150,18 @@ function preload() {
     nbInDur:  700,
     nbOutDur: 450,
     bgPath: "assets/quiz/bg_quiz_day1_dinningRoom.png",
-    // Read-only "day0 notes" recap tab — sits between "clues" and "day1 kitchen".
+    // Read-only "day0 notes" recap tab — on the RIGHT side, below the "log" tab.
     // Shows whatever the player wrote in the Day 0 puzzle (saved to localStorage).
     day0NotesTag: {
-      bookmark: "assets/quiz/bookmark_dayTag.png", // reuse art for now
+      bookmark: "assets/quiz/bookmark_dayTag.png", // reuse (mirrored) art for now
       label:    "day0\nnotes",
     },
     // Day-1-only extra bookmark: "day1 kitchen" → opens notebook_clue_d1.png.
-    // Pushed below the new "day0 notes" tab (clues + clues-gap + notes + gap).
+    // Placed 5px below the "clues" tag (default position handled in Day0Quiz).
     dayTag: {
       bookmark: "assets/quiz/bookmark_dayTag.png",
       page:     "assets/quiz/notebook_clue_d1.png",
       label:    "day1\nkitchen", // two lines to fit the narrow tab
-      y:        750 + 50 + 5 + 38 + 5, // below clues, then below day0-notes tab
     },
   });
   logView1 = new Day0QuizLog("day1");

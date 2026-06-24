@@ -135,15 +135,15 @@ class Day0Quiz {
       { tag: this.tagRules, page: this.notebookRules, hidden: false, lastPath: null },
     ];
 
-    // optional read-only "day0 notes" recap tab — by default 5px below "clues",
-    // i.e. between "clues" and the day tag. Its page is the distinct QuestionLog
-    // image so the render layer overlays the saved Day 0 text on it.
+    // optional read-only "day0 notes" recap tab — on the RIGHT side, just below
+    // the "log" tab (mirrors the log's RTL slide). Its page is the distinct
+    // QuestionLog image so the render layer overlays the saved Day 0 text on it.
     if (this.day0NotesCfg) {
       const cfg = this.day0NotesCfg;
       const w = cfg.w ?? 76;
       const h = cfg.h ?? 38;
-      const x = cfg.x ?? 5 + 100 - w; // right-align with clues/rules
-      const y = cfg.y ?? 750 + 50 + 5; // clues.y + clues.h + 5
+      const x = cfg.x ?? 919; // match the log tab's inner edge (notebook right)
+      const y = cfg.y ?? 680 + 50 + 5; // log.y + log.h + 5
       this.tagDay0Notes = new TagOverlayAnimator({
         label: cfg.label ?? "",
         labelSize: cfg.labelSize ?? 16,
@@ -153,7 +153,9 @@ class Day0Quiz {
         h,
         font: this.userFont,
         slideDur: 300,
-        aniDirection: "LTR",
+        aniDirection: cfg.aniDirection ?? "RTL",
+        // The art is drawn for a left tab; mirror it for the right side.
+        flipX: cfg.flipX ?? true,
         bgImg: this.imgBookmarkDay0Notes,
       });
       this._pageTags.push({

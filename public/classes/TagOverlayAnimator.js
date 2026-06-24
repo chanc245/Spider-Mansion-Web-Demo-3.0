@@ -12,6 +12,7 @@ class TagOverlayAnimator {
     overlayEndX = null,
     slideDur = 300,
     bgImg = null,
+    flipX = false,
   } = {}) {
     this.label = label;
     this.labelSize = labelSize;
@@ -22,6 +23,7 @@ class TagOverlayAnimator {
     this.font = font;
 
     this.bgImg = bgImg;
+    this.flipX = flipX; // mirror the bookmark art (e.g. left art reused on the right)
 
     this.aniDirection = aniDirection;
     const autoStart = this.aniDirection === "RTL" ? baseX - w : baseX;
@@ -73,7 +75,7 @@ class TagOverlayAnimator {
     noStroke();
 
     if (this.bgImg) {
-      image(this.bgImg, xNow, baseY, this.w, this.h);
+      this._blitBg(xNow, baseY);
     } else {
       // Fallback: white rectangle style
       fill(0, 0, 0, 120);
@@ -84,6 +86,19 @@ class TagOverlayAnimator {
 
     this._drawLabel(xNow, baseY);
     pop();
+  }
+
+  // Draw the bookmark image, mirrored horizontally when flipX is set.
+  _blitBg(xNow, baseY) {
+    if (this.flipX) {
+      push();
+      translate(xNow + this.w, baseY);
+      scale(-1, 1);
+      image(this.bgImg, 0, 0, this.w, this.h);
+      pop();
+    } else {
+      image(this.bgImg, xNow, baseY, this.w, this.h);
+    }
   }
 
   // Draw the (possibly multi-line) label centered on the tag.
@@ -117,7 +132,7 @@ class TagOverlayAnimator {
 
     if (this.bgImg) {
       // Bookmark PNG underlay
-      image(this.bgImg, xNow, baseY, this.w, this.h);
+      this._blitBg(xNow, baseY);
     } else {
       // Fallback: white rectangle style
       fill(0, 0, 0, 120);
