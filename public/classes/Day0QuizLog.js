@@ -129,6 +129,10 @@ class Day0QuizLog {
         return;
       }
 
+      // Notify listeners the player submitted — e.g. to stop the quiz-reading
+      // voiceover so it doesn't play on top of Eva's spoken response.
+      this.onPlayerSubmit?.();
+
       // user line
       this.questionCount++;
       this.notebookContent.push(`Q${this.questionCount}: ${v}`);

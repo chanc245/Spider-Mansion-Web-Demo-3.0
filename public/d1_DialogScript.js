@@ -560,6 +560,8 @@ const d1_vnScript_night_pre = [
   {
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
+    // Music box starts here and loops through the search + into the dining room.
+    soundEffect: "assets/audio/bg_ara_short.mp3",
     text: "You wake to the sound of a music box playing.",
   },
   {
@@ -597,6 +599,9 @@ const d1_vnScript_night_dining = [
   },
   {
     charName: "Eva",
+    // Music box stops as she invites the player to sit.
+    stopSound: "assets/audio/bg_ara_short.mp3",
+    fadeSoundMs: 800,
     text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
     diaAudio: "d1_dia_02.mp3",
   },

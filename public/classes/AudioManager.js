@@ -4,6 +4,7 @@ class AudioManager {
     this._audios = new Map(); // path -> HTMLAudioElement
     this._fades = new Map(); // path -> cancel fn
     this._baseVolumes = new Map(); // path -> base 0..1 (pre-master)
+    this._exclusiveMusic = new Set(); // paths that must never play simultaneously
     this.masterVolume = masterVolume;
   }
 
@@ -56,10 +57,26 @@ class AudioManager {
   }
 
   load(path, opts = {}) {
+    if (opts.exclusive) this._exclusiveMusic.add(path);
     return this._ensure(path, opts);
   }
 
+  // Register a track as exclusive background music: starting it stops any other
+  // exclusive track, guaranteeing only one BGM plays at a time.
+  markExclusive(path) {
+    this._exclusiveMusic.add(path);
+  }
+
   play(path, opts = {}) {
+    if (opts.exclusive) this._exclusiveMusic.add(path);
+    // Single-BGM guarantee: starting one exclusive track fades out the others.
+    if (this._exclusiveMusic.has(path)) {
+      for (const other of this._exclusiveMusic) {
+        if (other !== path && this.isPlaying(other)) {
+          this.stop(other, { fadeMs: opts.exclusiveFadeMs ?? 500 });
+        }
+      }
+    }
     const a = this._ensure(path, opts);
     if (!a) return;
     this._cancelFade(path);

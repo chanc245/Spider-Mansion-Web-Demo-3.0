@@ -137,7 +137,13 @@ function preload() {
   imgEnd   = loadImage("assets/cg_endPage.png");
 
   audioMgr = new AudioManager({ masterVolume: 1 });
-  audioMgr.load("assets/audio/bg_ara.mp3", { loop: true, volume: 0.3 });
+  // The two BGM tracks are mutually exclusive — only one plays at a time.
+  audioMgr.load("assets/audio/bg_ara.mp3", { loop: true, volume: 0.3, exclusive: true });
+  // Day 1 music box — looping BGM for the night music search + the quiz.
+  audioMgr.load("assets/audio/bg_ara_short.mp3", { loop: true, volume: 0.3, exclusive: true });
+  // Day 1 quiz reading — Eva/Ara reads the puzzle aloud when the quiz opens.
+  // Same volume (0.3) as the other voiceovers + BGM.
+  audioMgr.load("assets/dia_audio/d1_dia_quizRead.mp3", { volume: 0.3 });
   audioMgr.load("assets/audio/dia_step.mp3");
   audioMgr.load("assets/audio/ui_clickDia.mp3", { volume: 0.5 });
 
@@ -587,10 +593,24 @@ function startD1Quiz() {
   _prevNotebookImage = quiz1.currentNotebook;
   quiz1.setQuizState(true);   // scrolls 0 → height, sliding the bg down
   appState = "PR_QUIZ";
+
+  // Music box resumes (looping) under Eva/Ara reading the puzzle aloud.
+  audioMgr.play("assets/audio/bg_ara_short.mp3", { loop: true, volume: 0.3, from: 0 });
+  audioMgr.play("assets/dia_audio/d1_dia_quizRead.mp3", { volume: 0.3, from: 0 });
+
+  // If the player submits before the reading finishes, stop it so it doesn't
+  // play over Eva's spoken response.
+  logView1.onPlayerSubmit = () => {
+    audioMgr.stop("assets/dia_audio/d1_dia_quizRead.mp3", { fadeMs: 200 });
+  };
 }
 
 // outcome: "good" (default) or "bad" — only the opening dialogue differs.
 function startD1NightPostQuiz(outcome = "good") {
+  // Quiz is over — fade out the music box and stop the reading.
+  audioMgr.stop("assets/audio/bg_ara_short.mp3", { fadeMs: 600 });
+  audioMgr.stop("assets/dia_audio/d1_dia_quizRead.mp3");
+
   appState = "DIA_VN";
   dialog.setScript(
     outcome === "bad"
