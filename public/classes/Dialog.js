@@ -38,11 +38,33 @@ class Dialog {
     this.bgCache = new AssetCache();
     this.cgCache = new AssetCache();
 
+    // Tall / pannable BG ("long CG") — a background taller than the canvas that
+    // the camera can scroll between top and bottom (e.g. the Day 1 dining long
+    // CG, 2048×2304 → drawn at width × height*2). `bgTall` on a line switches the
+    // bg into scroll mode; `bgPan: "top" | "bottom"` animates the vertical camera.
+    // Only the *current* tall bg scrolls — a normal bg (or a crossfade's outgoing
+    // prev) still draws full-screen, so nothing stretches.
+    this._bgTall = false;
+    this._bgTallPath = null;
+    this._bgPanY = 0; // 0 = top of the long CG, `height` = bottom
+    this.bgPanMs = opts.bgPanMs ?? 700;
+    this._bgPan = new Tween({ from: 0, to: 0, dur: this.bgPanMs });
+
     // BG & CG layers
     this.bg = new CrossfadeLayer({
       cache: this.bgCache,
       fadeMs: opts.bgFadeMs ?? 300,
-      drawFn: (img) => image(img, 0, 0, width, height),
+      drawFn: (img) => {
+        if (
+          this._bgTall &&
+          img === this.bg.cur &&
+          this.bg.curPath === this._bgTallPath
+        ) {
+          image(img, 0, -this._bgPanY, width, height * 2);
+        } else {
+          image(img, 0, 0, width, height);
+        }
+      },
     });
     this.cg = new CrossfadeLayer({
       cache: this.cgCache,
@@ -128,6 +150,10 @@ class Dialog {
     this._fadingOut = false;
     this._uiOnlyFade = false;
     this._holdBgUntil = 0;
+    this._bgTall = false;
+    this._bgTallPath = null;
+    this._bgPanY = 0;
+    this._bgPan.active = false;
     this._uiFade.start(0, 255, this.fadeInMs);
     this.alpha = 0;
     this._applyLine(this.script[this.index]);
@@ -148,6 +174,7 @@ class Dialog {
 
     this.alpha = this._uiFade.update();
     this.bg.update();
+    this._bgPanY = this._bgPan.update();
     this.cg.update();
     this.typer.update();
     this.arrow.setEnabled(!this.typer.typing);
@@ -365,7 +392,29 @@ class Dialog {
 
     // A line without a `bg` field inherits the current background.
     // Use bg: null explicitly to clear it.
-    if ("bg" in line) this.bg.set(line.bg || null);
+    if ("bg" in line) {
+      this.bg.set(line.bg || null);
+      // Switching to a *different* plain bg (no bgTall) cancels scroll mode and
+      // recenters the camera. Re-asserting the SAME tall bg keeps it scrolling —
+      // e.g. the synthetic result line resumeFromOption splices in copies the
+      // current bg path forward, and must not collapse the long CG to full-screen.
+      if (!line.bgTall && line.bg !== this._bgTallPath) {
+        this._bgTall = false;
+        this._bgTallPath = null;
+        this._bgPan.active = false;
+        this._bgPanY = 0;
+      }
+    }
+    // Long-CG scroll: mark the current bg as tall, and/or pan the camera.
+    if (line.bgTall) {
+      this._bgTall = true;
+      this._bgTallPath =
+        ("bg" in line ? line.bg : this._bgTallPath) || this.bg.curPath;
+    }
+    if ("bgPan" in line) {
+      const target = line.bgPan === "bottom" ? height : 0;
+      this._bgPan.start(this._bgPanY, target, line.bgPanMs ?? this.bgPanMs);
+    }
     if (line.stopSound) this._stopSoundLine(line);
     if (line.soundEffect && this.audio) this.audio.play(line.soundEffect);
     this._playDiaAudio(line.diaAudio ?? null);

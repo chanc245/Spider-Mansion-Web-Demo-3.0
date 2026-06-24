@@ -2,6 +2,8 @@
 VISUAL
 bg — background image path (including cg)
 charCG — character sprite image path
+bgTall — mark this bg as a tall "long CG" (height*2) that the camera can scroll
+bgPan — animate the long-CG camera: "bottom" (scroll down) or "top" (scroll up)
 
 TEXT
 charName — name shown in the nameplate (blank/space = narrator, no nameplate)
@@ -586,35 +588,40 @@ const d1_vnScript_night_dining = [
     charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
     text: "You're awake. I've been waiting for you.",
+    diaAudio: "d1_dia_01.mp3",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    bg: "assets/bg/bg_pr_1f_DinningRoom_cg.png",
     text: "Eva is seated in the master's chair, with a silver dish cover in front of her. Across the table, you notice another covered dish.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
+    diaAudio: "d1_dia_02.mp3",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
     text: "Eva said with a smile on her face. Unlike the bright and soft smile you saw in the morning, under the moonlight, this smile seems a bit... off.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    // charCG: "assets/charImg/char_ara_smiling.png",
     text: "Before you can think more into that idea, somehow, you feel a strong hunger, as if you haven't eaten all day. You sit across from Eva's seat.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    // charCG: "assets/charImg/char_ara_smiling.png",
+    // Switch to the tall dining "long CG" and pan the camera down to the dish.
+    bg: "assets/quiz/bg_quiz_day1_dinningRoom.png",
+    bgTall: true,
+    bgPan: "bottom",
     text: "Go on, you must be hungry.",
+    diaAudio: "d1_dia_03.mp3",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    // charCG: "assets/charImg/char_ara_smiling.png",
     text: "Somehow, you don't feel this is a good choice. Your hand trembles as it reaches for the cover.",
   },
   // Both choices converge — Ara interrupts either way.
@@ -631,17 +638,20 @@ const d1_vnScript_night_dining = [
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    // charCG: "assets/charImg/char_ara_smiling.png",
+    // Pan the long CG camera back up to Eva.
+    bgPan: "top",
     text: "Ah, I almost forgot! Remember the quiz game we promised to do?",
+    diaAudio: "d1_dia_04.mp3",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    // charCG: "assets/charImg/char_ara_smiling.png",
     text: "You're interrupted in the middle of reaching for the cover. You feel relieved not to have opened it.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_ara_smiling.png",
+    // charCG: "assets/charImg/char_ara_smiling.png",
     text: "You briefly recall the promise made last night.",
   },
   // sketch.js starts D1_QUIZ when this script finishes
@@ -701,11 +711,13 @@ const d1_vnScript_night_postQuiz_tail = [
     charName: "Eva",
     charCG: "assets/charImg/char_ara_normal.png",
     text: "Eva used to be served this kind of food. Can you even call that person a competent cook?",
+    diaAudio: "d1_dia_05.mp3",
   },
   {
     charName: "Eva",
     charCG: "assets/charImg/char_ara_normal.png",
     text: "He's just an egotist who is cruel to the weak and submissive to the strong.",
+    diaAudio: "d1_dia_06.mp3",
   },
   {
     charName: " ",
@@ -726,6 +738,7 @@ const d1_vnScript_night_postQuiz_tail = [
     charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
     text: "At least you care. Unlike that cook.",
+    diaAudio: "d1_dia_07.mp3",
   },
   {
     charName: "Eva",
@@ -736,6 +749,7 @@ const d1_vnScript_night_postQuiz_tail = [
     charName: "Eva",
     charCG: "assets/charImg/char_ara_normal.png",
     text: "You should go to sleep soon. You must be tired.",
+    diaAudio: "d1_dia_08.mp3",
   },
   {
     charName: " ",
@@ -746,6 +760,7 @@ const d1_vnScript_night_postQuiz_tail = [
     charName: "Eva",
     charCG: "assets/charImg/char_ara_smiling.png",
     text: "I'll look forward to tomorrow's quiz.",
+    diaAudio: "d1_dia_09.mp3",
   },
   {
     charName: " ",
@@ -762,6 +777,7 @@ const d1_vnScript_night_postQuiz_Good = [
     charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "Good that you got this right. As a prize, I'll allow you to open the cover. Bon appétit.",
+    diaAudio: "d1_dia_g01.mp3",
   },
   ...d1_vnScript_night_postQuiz_tail,
 ];
@@ -786,6 +802,7 @@ const d1_vnScript_night_postQuiz_Bad = [
     charCG: "assets/charImg/char_ara_normal.png",
     bg: "assets/bg/bg_pr_1f_Dining.png",
     text: "...Not quite. But it doesn't matter. I'll allow you to open the cover anyway. Bon appétit.",
+    diaAudio: "d1_dia_b01.mp3",
   },
   ...d1_vnScript_night_postQuiz_tail,
 ];
