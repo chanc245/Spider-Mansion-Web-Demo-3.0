@@ -135,16 +135,15 @@ class Day0Quiz {
       { tag: this.tagRules, page: this.notebookRules, hidden: false, lastPath: null },
     ];
 
-    // optional read-only "day0 logs" recap tab — on the RIGHT side, set LOW and
-    // well clear of the "log" tab (which lives at the top right) so the two
-    // never visually couple while sliding. Its page is the distinct QuestionLog
-    // image so the render layer overlays the saved Day 0 text on it.
+    // optional read-only "day0 logs" recap tab — on the RIGHT side, ~5px under
+    // the "log" tab. Its page is the distinct QuestionLog image so the render
+    // layer overlays the saved Day 0 text on it.
     if (this.day0NotesCfg) {
       const cfg = this.day0NotesCfg;
       const w = cfg.w ?? 76;
       const h = cfg.h ?? 38;
       const x = cfg.x ?? 919; // match the log tab's inner edge (notebook right)
-      const y = cfg.y ?? 905; // lower-right; far below "log" (y 680) to stay separated
+      const y = cfg.y ?? 680 + 50 + 5; // log.y + log.h + 5 → ~5px under "log"
       this.tagDay0Notes = new TagOverlayAnimator({
         label: cfg.label ?? "",
         labelSize: cfg.labelSize ?? 16,
@@ -154,7 +153,14 @@ class Day0Quiz {
         h,
         font: this.userFont,
         slideDur: 300,
-        aniDirection: cfg.aniDirection ?? "RTL",
+        aniDirection: "RTL",
+        // Page-tag "tuck" grammar for a RIGHT-side tab: opening its page must
+        // slide the tab LEFT, *under* the notebook, before it hides (mirror of
+        // how the left tabs tuck right). The default RTL overlay coords do the
+        // opposite — slide it out to the right, then hide — which read as a
+        // pop-out-then-vanish bounce. Override the coords explicitly.
+        overlayStartX: x,     // base position (protruding right of the notebook)
+        overlayEndX:   x - w, // tucked left, hidden under the notebook
         // The art is drawn for a left tab; mirror it for the right side.
         flipX: cfg.flipX ?? true,
         bgImg: this.imgBookmarkDay0Notes,
