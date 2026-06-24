@@ -582,7 +582,7 @@ class Day0QuizLog {
     this.notebookContent =
       saved && saved.length
         ? saved
-        : ["Day 0 - Notes:", "(No notes from Day 0 were saved.)"];
+        : ["Day 0 - Logs:", "(No logs from Day 0 were saved.)"];
     this.page = 0;
     this.pageStarts = [0];
     this._invalidateWrap();

@@ -150,11 +150,11 @@ function preload() {
     nbInDur:  700,
     nbOutDur: 450,
     bgPath: "assets/quiz/bg_quiz_day1_dinningRoom.png",
-    // Read-only "day0 notes" recap tab — on the RIGHT side, below the "log" tab.
-    // Shows whatever the player wrote in the Day 0 puzzle (saved to localStorage).
+    // Read-only "day0 logs" recap tab — on the RIGHT side, low and clear of the
+    // "log" tab. Shows whatever the player wrote in the Day 0 puzzle (localStorage).
     day0NotesTag: {
       bookmark: "assets/quiz/bookmark_dayTag.png", // reuse (mirrored) art for now
-      label:    "day0\nnotes",
+      label:    "day0\nlogs",
     },
     // Day-1-only extra bookmark: "day1 kitchen" → opens notebook_clue_d1.png.
     // Placed 5px below the "clues" tag (default position handled in Day0Quiz).

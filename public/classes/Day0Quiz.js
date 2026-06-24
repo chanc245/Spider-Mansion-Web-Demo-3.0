@@ -135,15 +135,16 @@ class Day0Quiz {
       { tag: this.tagRules, page: this.notebookRules, hidden: false, lastPath: null },
     ];
 
-    // optional read-only "day0 notes" recap tab — on the RIGHT side, just below
-    // the "log" tab (mirrors the log's RTL slide). Its page is the distinct
-    // QuestionLog image so the render layer overlays the saved Day 0 text on it.
+    // optional read-only "day0 logs" recap tab — on the RIGHT side, set LOW and
+    // well clear of the "log" tab (which lives at the top right) so the two
+    // never visually couple while sliding. Its page is the distinct QuestionLog
+    // image so the render layer overlays the saved Day 0 text on it.
     if (this.day0NotesCfg) {
       const cfg = this.day0NotesCfg;
       const w = cfg.w ?? 76;
       const h = cfg.h ?? 38;
       const x = cfg.x ?? 919; // match the log tab's inner edge (notebook right)
-      const y = cfg.y ?? 680 + 50 + 5; // log.y + log.h + 5
+      const y = cfg.y ?? 905; // lower-right; far below "log" (y 680) to stay separated
       this.tagDay0Notes = new TagOverlayAnimator({
         label: cfg.label ?? "",
         labelSize: cfg.labelSize ?? 16,
