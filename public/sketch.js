@@ -4,6 +4,8 @@ let quiz, logView, dialog;
 
 // ── Day 1 quiz instances ─────────────────────────────────────────
 let quiz1, logView1;
+// Read-only viewer for the saved Day 0 Q&A, shown on the "day0 notes" tab.
+let logViewDay0Notes;
 
 // ── State managers (Day 1+) ───────────────────────────────────────
 let pa_investigateMgr,
@@ -148,15 +150,24 @@ function preload() {
     nbInDur:  700,
     nbOutDur: 450,
     bgPath: "assets/quiz/bg_quiz_day1_dinningRoom.png",
+    // Read-only "day0 notes" recap tab — sits between "clues" and "day1 kitchen".
+    // Shows whatever the player wrote in the Day 0 puzzle (saved to localStorage).
+    day0NotesTag: {
+      bookmark: "assets/quiz/bookmark_dayTag.png", // reuse art for now
+      label:    "day0\nnotes",
+    },
     // Day-1-only extra bookmark: "day1 kitchen" → opens notebook_clue_d1.png.
-    // Placed 5px below the "clues" tag (default position handled in Day0Quiz).
+    // Pushed below the new "day0 notes" tab (clues + clues-gap + notes + gap).
     dayTag: {
       bookmark: "assets/quiz/bookmark_dayTag.png",
       page:     "assets/quiz/notebook_clue_d1.png",
       label:    "day1\nkitchen", // two lines to fit the narrow tab
+      y:        750 + 50 + 5 + 38 + 5, // below clues, then below day0-notes tab
     },
   });
   logView1 = new Day0QuizLog("day1");
+  // Read-only recap of the Day 0 log (no Eva, no input).
+  logViewDay0Notes = new Day0QuizLog("day0Notes", { readOnly: true });
 
   _activeQuiz    = quiz;
   _activeLogView = logView;
@@ -208,6 +219,7 @@ function preload() {
   logView.preload();
   quiz1.preload();
   logView1.preload();
+  logViewDay0Notes.preload();
   dialog.preload();
   dia_optionMgr.preload();
   // Option screens that run after the VN fades out draw their own bg.
@@ -226,6 +238,7 @@ function setup() {
   logView.setup();
   quiz1.setup();
   logView1.setup();
+  logViewDay0Notes.setup();
   quiz.setQuizState(false);
   quiz1.setQuizState(false);
 
@@ -358,6 +371,18 @@ function draw() {
 
     if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
       _activeLogView.input.show();
+    }
+
+    // Read-only Day 0 notes recap page (Day 1 quiz only): overlay the saved
+    // Day 0 Q&A when that tab's page is open.
+    const onDay0NotesPage =
+      _activeQuiz.notebookDay0Notes &&
+      _activeQuiz.currentNotebook === _activeQuiz.notebookDay0Notes;
+    if (onDay0NotesPage && notebookReady) {
+      if (!logViewDay0Notes.active) logViewDay0Notes.setActive(true, "page");
+      logViewDay0Notes.render(_activeQuiz.notebookX, _activeQuiz.notebookY);
+    } else if (logViewDay0Notes.active) {
+      logViewDay0Notes.setActive(false, "page");
     }
 
     // Decorative frame on top of everything (bg + notebook + log text)
@@ -548,6 +573,9 @@ function startD1Quiz() {
   _activeQuiz    = quiz1;
   _activeLogView = logView1;
 
+  // Pick up Day 0 notes written earlier this session (no refresh needed).
+  logViewDay0Notes.reloadFromStorage();
+
   // Start from a clean slate so the intro always plays the same way, even on
   // debug re-entry: notebook on the Log page, bg scrolled to the TOP so it
   // slides down to the bottom when the quiz opens (matches Day 0).
@@ -663,6 +691,13 @@ function mousePressed() {
   if (appState === "PR_QUIZ") {
     _activeQuiz.mousePressed();
     _activeLogView.mousePressed();
+    // Allow paging the read-only Day 0 notes when its page is open.
+    if (
+      _activeQuiz.notebookDay0Notes &&
+      _activeQuiz.currentNotebook === _activeQuiz.notebookDay0Notes
+    ) {
+      logViewDay0Notes.mousePressed();
+    }
   }
 }
 

@@ -13,6 +13,10 @@ class Day0Quiz {
     //   opts.dayTag = { bookmark, page, label?, x?, y?, w?, h? }
     this.dayTagCfg = opts.dayTag ?? null;
 
+    // Optional read-only "day0 notes" recap tag (Day 1+). Renders the saved
+    //   Day 0 Q&A text over a notebook page. opts.day0NotesTag = { bookmark, label?, x?, y? }
+    this.day0NotesCfg = opts.day0NotesTag ?? null;
+
     // assets
     this.bg = null;
     this.frameImg = null;
@@ -20,6 +24,7 @@ class Day0Quiz {
     this.notebookClues = null;
     this.notebookRules = null;
     this.notebookDayTag = null; // optional
+    this.notebookDay0Notes = null; // optional — distinct QuestionLog img for text overlay
     this.userFont = null;
 
     // scroll + notebook slide
@@ -41,6 +46,7 @@ class Day0Quiz {
     this.tagRules = null;
     this.tagLog = null;
     this.tagDayTag = null; // optional
+    this.tagDay0Notes = null; // optional
 
     // Left-side "page" tags (built in setup()). Each: { tag, page, hidden, lastPath }
     this._pageTags = [];
@@ -68,6 +74,14 @@ class Day0Quiz {
     if (this.dayTagCfg) {
       this.imgBookmarkDayTag = loadImage(this.dayTagCfg.bookmark);
       this.notebookDayTag = loadImage(this.dayTagCfg.page);
+    }
+
+    if (this.day0NotesCfg) {
+      this.imgBookmarkDay0Notes = loadImage(this.day0NotesCfg.bookmark);
+      // Its own QuestionLog image instance — a reference distinct from
+      // notebookLog so the render layer can tell the recap page apart and
+      // overlay the saved Day 0 text (instead of the live Day 1 log).
+      this.notebookDay0Notes = loadImage("assets/quiz/notebook_QuestionLog_1.png");
     }
   }
 
@@ -120,6 +134,35 @@ class Day0Quiz {
       { tag: this.tagClues, page: this.notebookClues, hidden: false, lastPath: null },
       { tag: this.tagRules, page: this.notebookRules, hidden: false, lastPath: null },
     ];
+
+    // optional read-only "day0 notes" recap tab — by default 5px below "clues",
+    // i.e. between "clues" and the day tag. Its page is the distinct QuestionLog
+    // image so the render layer overlays the saved Day 0 text on it.
+    if (this.day0NotesCfg) {
+      const cfg = this.day0NotesCfg;
+      const w = cfg.w ?? 76;
+      const h = cfg.h ?? 38;
+      const x = cfg.x ?? 5 + 100 - w; // right-align with clues/rules
+      const y = cfg.y ?? 750 + 50 + 5; // clues.y + clues.h + 5
+      this.tagDay0Notes = new TagOverlayAnimator({
+        label: cfg.label ?? "",
+        labelSize: cfg.labelSize ?? 16,
+        baseX: x,
+        y,
+        w,
+        h,
+        font: this.userFont,
+        slideDur: 300,
+        aniDirection: "LTR",
+        bgImg: this.imgBookmarkDay0Notes,
+      });
+      this._pageTags.push({
+        tag: this.tagDay0Notes,
+        page: this.notebookDay0Notes,
+        hidden: false,
+        lastPath: null,
+      });
+    }
 
     // optional day-1+ tag: a third bookmark, by default 5px below "clues"
     if (this.dayTagCfg) {

@@ -1,6 +1,13 @@
+// localStorage key for the Day 0 Q&A log, saved when Day 0 ends and read back
+// by the read-only "day0 notes" recap page in the Day 1 notebook.
+const DAY0_NOTEBOOK_KEY = "spiderMansion_day0_notebook";
+
 class Day0QuizLog {
-  constructor(dayKey = "day0") {
+  // opts.readOnly → a paged, input-less viewer that renders saved Day 0 notes
+  // (loaded from localStorage) instead of running a live Eva Q&A.
+  constructor(dayKey = "day0", opts = {}) {
     this._dayKey = dayKey;
+    this.readOnly = !!opts.readOnly;
     // Notebook-relative placements
     this.x1 = 135 - 95;
     this.y1 = 110 - 65;
@@ -77,6 +84,12 @@ class Day0QuizLog {
 
   setup() {
     this._maxLinesPerBox = Math.floor(this.h1 / this.leading);
+
+    // Read-only recap viewer: no Eva, no input — just paged saved text.
+    if (this.readOnly) {
+      this._loadNotesContent();
+      return;
+    }
 
     // dayKey selects which EVA_CONFIGS entry to use ("day0", "day1", …)
     // The host is always shown as "Eva" for now — her true name (Ara) is a
@@ -187,7 +200,7 @@ class Day0QuizLog {
     this.fadeDurCurrent = max(1, dur);
     this.fading = true;
 
-    if (!shouldBeActive) this.input.hide();
+    if (!shouldBeActive && this.input) this.input.hide();
   }
 
   render(notebookX = 0, notebookY = 0) {
@@ -240,6 +253,7 @@ class Day0QuizLog {
       this._solved = true;
       this._ending = true;
       this.input.hide();
+      this._persistNotebook(); // save the finished Day 0 log for the Day 1 recap
       await this._playEvaVoice(reply); // wait for voice to finish
       if (typeof this.onSolved === "function") this.onSolved();
       return;
@@ -253,6 +267,7 @@ class Day0QuizLog {
         `Q limit reached (${this.inputLimit}).`,
       );
       this.input.hide();
+      this._persistNotebook(); // save the finished Day 0 log for the Day 1 recap
       await this._playEvaVoice(reply); // wait for voice to finish
       if (typeof this.onExhausted === "function") this.onExhausted();
     }
@@ -322,7 +337,7 @@ class Day0QuizLog {
 
     // input position
     if (this._canShowInputThisPage()) this._positionInput(curPageLines.length);
-    else this.input.hide();
+    else if (this.input) this.input.hide();
 
     // nav buttons
     if (this.alpha > 1) {
@@ -345,6 +360,7 @@ class Day0QuizLog {
   }
 
   _canShowInputThisPage() {
+    if (this.readOnly || !this.input) return false;
     return (
       this.alpha >= 200 &&
       this.page === this.pageStarts.length - 1 &&
@@ -364,6 +380,7 @@ class Day0QuizLog {
   }
 
   _snapInput() {
+    if (!this.input) return;
     this._justSubmitted = true;
     this.input.hide();
     setTimeout(() => {
@@ -530,6 +547,52 @@ class Day0QuizLog {
   _placeholderText() {
     const n = Math.min(this.questionCount + 1, this.inputLimit);
     return `Q${n}: ${this.placeholderBase}`;
+  }
+
+  // ---------- Day 0 notes persistence (read-only recap support) ----------
+
+  // Save the current log to localStorage. No-op unless this is the Day 0 log.
+  _persistNotebook() {
+    if (this._dayKey !== "day0") return;
+    try {
+      localStorage.setItem(
+        DAY0_NOTEBOOK_KEY,
+        JSON.stringify(this.notebookContent),
+      );
+    } catch (e) {
+      console.warn("Could not save Day 0 notebook:", e);
+    }
+  }
+
+  // Read the saved Day 0 log back, or null if nothing valid is stored.
+  _loadPersistedNotebook() {
+    try {
+      const raw = localStorage.getItem(DAY0_NOTEBOOK_KEY);
+      if (!raw) return null;
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Populate notebookContent for the read-only viewer + reset paging.
+  _loadNotesContent() {
+    const saved = this._loadPersistedNotebook();
+    this.notebookContent =
+      saved && saved.length
+        ? saved
+        : ["Day 0 - Notes:", "(No notes from Day 0 were saved.)"];
+    this.page = 0;
+    this.pageStarts = [0];
+    this._invalidateWrap();
+  }
+
+  // Public: re-read storage (e.g. when the Day 1 quiz opens, so notes written
+  // earlier this session are picked up without a page refresh).
+  reloadFromStorage() {
+    if (!this.readOnly) return;
+    this._loadNotesContent();
   }
 
   // Fetch TTS audio from the server and play it.
