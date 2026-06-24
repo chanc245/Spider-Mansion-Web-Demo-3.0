@@ -256,19 +256,25 @@ const d1_vnScript_lunch = [
     text: "You bring the meal up to Eva's room.",
   },
   {
+    // Eva first appears here (she's seen in the room) and stays on screen for
+    // the rest of the conversation. keepCG holds her across the narration lines.
     charName: " ",
+    charCG: "assets/charImg/char_eva_smiling.png",
     text: "You see Eva holding a book, but instead of reading it, she is staring into a corner of her room, her mind seemingly wandering off somewhere.",
   },
   {
     charName: " ",
+    keepCG: true,
     text: "You follow her gaze to the corner and find it covered in dust and spiderwebs.",
   },
   {
     charName: " ",
+    keepCG: true,
     text: "Before you can call her, she catches the smell of food and turns to you.",
   },
   {
     charName: " ",
+    charCG: "assets/charImg/char_eva_happy.png",
     text: "Her face brightens with a smile, looking more excited to see you than the food itself.",
   },
   {
