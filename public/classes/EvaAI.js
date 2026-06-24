@@ -69,7 +69,7 @@ that's correct!
   day1: {
     maxQuestions: 15,
     setup:
-      "There was a chef who was very precise in his cooking. Whenever he cooked, he always kept his recipe book open and would be somewhat violent to those around him. But one day, when the master took a bite of his dish, the master became very angry and threw the bowl away. The chef said that he definitely followed the recipe. What happened?",
+      "There was a chef who was very precise in his cooking. Whenever he cooked, he always kept his recipe book open and would be somewhat violent to those around him. But one day, when the master took a bite of his dish, the master became very angry and threw the bowl away. The chef said that he definitely followed the recipe.",
     solution:
       "The chef was a heavy smoker. Realizing that his taste buds had become dull due to frequent smoking, he began to rely more than ever on his recipe book. However, he left the recipe book open near a window while cooking, and the wind flipped it to the wrong page. The recipe book had no pictures, making it impossible to notice the mistake. The dish looked similar but tasted completely different.",
     tone: `

@@ -148,6 +148,13 @@ function preload() {
     nbInDur:  700,
     nbOutDur: 450,
     bgPath: "assets/quiz/bg_quiz_day1_dinningRoom.png",
+    // Day-1-only extra bookmark: "day1 kitchen" → opens notebook_clue_d1.png.
+    // Placed 5px below the "clues" tag (default position handled in Day0Quiz).
+    dayTag: {
+      bookmark: "assets/quiz/bookmark_dayTag.png",
+      page:     "assets/quiz/notebook_clue_d1.png",
+      label:    "day1\nkitchen", // two lines to fit the narrow tab
+    },
   });
   logView1 = new Day0QuizLog("day1");
 
@@ -358,6 +365,9 @@ function draw() {
       _activeLogView.input.show();
     }
 
+    // Decorative frame on top of everything (bg + notebook + log text)
+    _activeQuiz.renderFrame();
+
     _prevNotebookReady = notebookReady;
     _prevNotebookImage = _activeQuiz.currentNotebook;
   }
@@ -514,11 +524,26 @@ function startD1NightDining() {
 }
 
 function startD1Quiz() {
+  // Defensive: kill any running VN + the day-0 quiz hand-off so a stale
+  // dialog.onFinish can't swap us back to the day-0 quiz (the bug seen when
+  // jumping here via debug while the title VN was still active).
+  showQuizAfterDialog = false;
+  dialog.stop();
+
   _activeQuiz    = quiz1;
   _activeLogView = logView1;
+
+  // Start from a clean slate so the intro always plays the same way, even on
+  // debug re-entry: notebook on the Log page, bg scrolled to the TOP so it
+  // slides down to the bottom when the quiz opens (matches Day 0).
+  quiz1.gotoLogPage();
+  quiz1.yOffset = 0;
+  quiz1.nbT = 0;
+  quiz1.nbSlide.start(0, 0);
+
   _prevNotebookReady = quiz1.isNotebookShown();
   _prevNotebookImage = quiz1.currentNotebook;
-  quiz1.setQuizState(true);
+  quiz1.setQuizState(true);   // scrolls 0 → height, sliding the bg down
   appState = "PR_QUIZ";
 }
 

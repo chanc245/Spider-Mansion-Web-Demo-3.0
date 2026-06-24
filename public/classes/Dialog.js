@@ -276,6 +276,17 @@ class Dialog {
     return this._finished;
   }
 
+  // Hard-stop the dialog WITHOUT firing onFinish. Use when another system takes
+  // over the screen (e.g. a debug jump straight into a quiz/mini-game) so a
+  // still-running script can't later fire a stale onFinish and hijack state.
+  stop() {
+    this._running = false;
+    this._fadingOut = false;
+    this._uiOnlyFade = false;
+    this._holdBgUntil = 0;
+    this._finished = true;
+  }
+
   // Call this after DIA_OPTION resolves.
   // If resultText is provided, it is shown as a dialogue line before advancing.
   resumeFromOption(resultText = null) {

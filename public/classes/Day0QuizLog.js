@@ -478,21 +478,29 @@ class Day0QuizLog {
     textSize(this.fontSize);
     const out = [];
     for (const para of paragraphs) {
-      const words = para.split(/\s+/);
-      let line = "";
-      for (const word of words) {
-        const test = line ? line + " " + word : word;
-        if (textWidth(test) <= maxWidth) line = test;
-        else {
-          if (line) out.push(line);
-          if (textWidth(word) > maxWidth) {
-            for (const chunk of this._hardBreakWord(word, maxWidth))
-              out.push(chunk);
-            line = out.pop();
-          } else line = word;
+      // Break each paragraph after every full stop so each sentence starts on
+      // its own line. Split only when "." is followed by whitespace (keeps the
+      // period, and leaves decimals / "Q1:" style entries untouched).
+      const sentences = String(para)
+        .split(/(?<=\.)\s+/)
+        .filter((s) => s.length);
+      for (const sentence of sentences) {
+        const words = sentence.split(/\s+/);
+        let line = "";
+        for (const word of words) {
+          const test = line ? line + " " + word : word;
+          if (textWidth(test) <= maxWidth) line = test;
+          else {
+            if (line) out.push(line);
+            if (textWidth(word) > maxWidth) {
+              for (const chunk of this._hardBreakWord(word, maxWidth))
+                out.push(chunk);
+              line = out.pop();
+            } else line = word;
+          }
         }
+        if (line) out.push(line); // flush → next sentence begins on a new line
       }
-      if (line) out.push(line);
     }
     return out;
   }

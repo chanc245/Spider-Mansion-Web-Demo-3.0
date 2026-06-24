@@ -1,6 +1,7 @@
 class TagOverlayAnimator {
   constructor({
     label = "clues",
+    labelSize = 30,
     baseX = 5,
     y = 750,
     w = 100,
@@ -13,6 +14,7 @@ class TagOverlayAnimator {
     bgImg = null,
   } = {}) {
     this.label = label;
+    this.labelSize = labelSize;
     this.baseX = baseX;
     this.y = y;
     this.w = w;
@@ -80,13 +82,25 @@ class TagOverlayAnimator {
       rect(xNow, baseY, this.w, this.h);
     }
 
+    this._drawLabel(xNow, baseY);
+    pop();
+  }
+
+  // Draw the (possibly multi-line) label centered on the tag.
+  _drawLabel(xNow, baseY) {
+    if (!this.label) return;
     if (this.font) textFont(this.font);
-    textSize(30);
+    textSize(this.labelSize);
     noStroke();
     fill(0);
     textAlign(CENTER, CENTER);
-    text(this.label, xNow + this.w / 2, baseY + this.h / 2 - 2);
-    pop();
+    const lines = String(this.label).split("\n");
+    const lh = this.labelSize;
+    const cx = xNow + this.w / 2;
+    const cy0 = baseY + this.h / 2 - 2 - ((lines.length - 1) * lh) / 2;
+    for (let i = 0; i < lines.length; i++) {
+      text(lines[i], cx, cy0 + i * lh);
+    }
   }
 
   // Draw animated overlay under notebook
@@ -112,12 +126,7 @@ class TagOverlayAnimator {
       rect(xNow, baseY, this.w, this.h);
     }
 
-    if (this.font) textFont(this.font);
-    textSize(30);
-    noStroke();
-    fill(0);
-    textAlign(CENTER, CENTER);
-    text(this.label, xNow + this.w / 2, baseY + this.h / 2 - 2);
+    this._drawLabel(xNow, baseY);
     pop();
   }
 
