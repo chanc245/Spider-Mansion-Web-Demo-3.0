@@ -664,8 +664,13 @@ function startPA_WebInvestigate(config, onDone) {
 // ─────────────────────────────────────────────────────────────────
 // INPUT
 // ─────────────────────────────────────────────────────────────────
-function mousePressed() {
+function mousePressed(event) {
   if (!dialog || !quiz || !logView) return;
+
+  // Clicks on the floating debug panel must not advance the dialogue / game.
+  if (event && event.target && event.target.closest && event.target.closest("#dbg")) {
+    return;
+  }
 
   if (appState === "TITLE") {
     appState = "DIA_VN";

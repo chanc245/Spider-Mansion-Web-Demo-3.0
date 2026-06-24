@@ -258,6 +258,8 @@
   // ─────────────────────────────────────────────────────────────────
   const panel = document.createElement("div");
   panel.id = "dbg";
+  // Start collapsed (shrunk) — click the header to expand.
+  panel.classList.add("collapsed");
 
   // header
   const head = document.createElement("div");
@@ -265,7 +267,7 @@
   head.innerHTML = `
     <span class="title">🐞 DEBUG</span>
     <span id="dbg-state">–</span>
-    <span id="dbg-min">▾</span>
+    <span id="dbg-min">▸</span>
   `;
   panel.appendChild(head);
 
