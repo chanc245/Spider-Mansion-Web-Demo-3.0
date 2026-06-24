@@ -179,8 +179,12 @@ class Dialog {
     // 2. Character art (CG)
     this.cg.render(uiA);
 
-    // 3. Decorative frame
-    this._drawFrame(uiA);
+    // 3. Decorative frame — held solid like the bg (bgA), not faded with the UI
+    // text (uiA). Otherwise the frame fades in from black on every VN start,
+    // making it blink at option↔VN / manager→VN handoffs where another state
+    // already had a frame on screen. It still fades out on a real scene-ending
+    // fade (when bgA tracks uiA).
+    this._drawFrame(bgA);
 
     // When an external UI (e.g. DIA_OPTION) owns the screen, keep the bg, CG and
     // decorative frame but skip the nameplate / body text / arrow below.
