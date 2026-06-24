@@ -44,7 +44,7 @@ const d1_vnScript_morning = [
   },
   {
     charName: " ",
-    bg: "assets/bg/bg_pr_3f_Attic.png",
+    bg: "assets/bg/bg_pa_3f_Attic.png",
     text: "Eva is still peacefully asleep in her bed. Sensing the gentle awakening from you, she pulls the blanket up to hide herself slightly beneath it.",
   },
   {
