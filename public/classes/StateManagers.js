@@ -1179,20 +1179,41 @@ class PA_WebInvestigateManager {
   static DIM_ALPHA         = 180;
   static DIM_FADE_SPEED    = 20;
 
+  // Description text box geometry — matches Dialog's VN text region.
+  static TEXT_RECT = { x: 195, y: 450, w: 640, h: 100 };
+  static TEXT_SIZE = 20;
+  static TEXT_LEAD = 23;
+  static DONE_LINE =
+    "It seems like I have investigated all the items you are interested in.";
+
   constructor() {
     this.active    = false;
     this.onAllSeen = null;
 
-    // Completion hold — after the last object is seen, keep rendering for a
-    // short beat before firing onAllSeen (driven from update(), not setTimeout,
-    // so the overlay stays on screen instead of flashing to black).
-    this._done          = false;
-    this._doneHoldUntil = 0;
-
     // Runtime state
-    this._phase      = "start"; // "start" | "web" | "detail"
+    // "start"  — tiny "web vision" hint, waiting for first click
+    // "web"    — web animates, objects are clickable
+    // "option" — an item with subOptions is being chosen (oval chooser)
+    // "detail" — an item's description shows in the VN text box
+    // "complete" — the final "all investigated" line, then hand off
+    this._phase      = "start";
     this._config     = null;
     this._bgImg      = null;
+
+    // Description text box (reuses VN-style typewriter + blinking arrow)
+    this._typer      = new Typewriter({ charMs: 20, punctExtraMs: 80 });
+    this._arrow      = new Blinker({ periodMs: 900 });
+    this._detailText = "";
+
+    // Internal option chooser for items with subOptions (oval + tags UI).
+    this._optionMgr  = new DIA_OptionManager();
+
+    // Decorative frames: investigate frame while scanning, VN frame during text.
+    this._investigateFrame = null;
+    this._vnFrame          = null;
+
+    // Advance indicator image (replaces the ">" glyph)
+    this._arrowImg         = null;
 
     // Web geometry
     this._rings        = 0;
@@ -1210,10 +1231,8 @@ class PA_WebInvestigateManager {
     // Seen tracking
     this._seenSet = new Set();
 
-    // Detail panel
-    this._selObj       = null; // rect ref currently in detail
-    this._selSubIdx    = null; // null | 0 | 1 — which sub-option was clicked
-    this._detailBtns   = [];   // { x,y,w,h, action }
+    // Detail
+    this._selObj       = null; // rect ref currently shown in the text box
 
     // Asset cache (preloaded by caller)
     this._imgCache = {};
@@ -1229,6 +1248,15 @@ class PA_WebInvestigateManager {
       if (obj.imgFull) this._imgCache[obj.imgFull] = loadImage(obj.imgFull);
     }
     if (!this._font) this._font = loadFont("assets/fonts/Forum-Regular.ttf");
+
+    // Frames + chooser assets (load once — guard against repeat configs).
+    if (!this._vnFrame)
+      this._vnFrame = loadImage("assets/ui/ui_decor_frame.png");
+    if (!this._investigateFrame)
+      this._investigateFrame = loadImage("assets/ui/ui_investigate_decor_frame.png");
+    if (!this._arrowImg)
+      this._arrowImg = loadImage("assets/ui/ui_text_spiderBlinker.png");
+    if (!this._optionMgr._tagLeft) this._optionMgr.preload();
   }
 
   start(config) {
@@ -1245,10 +1273,8 @@ class PA_WebInvestigateManager {
     this._segStyles    = [];
     this._seenSet      = new Set();
     this._selObj       = null;
-    this._selSubIdx    = null;
-    this._detailBtns   = [];
-    this._done          = false;
-    this._doneHoldUntil = 0;
+    this._detailText   = "";
+    this._optionMgr.active = false;
 
     // Attach cached images to each object
     for (const obj of (config.objects || [])) {
@@ -1261,17 +1287,23 @@ class PA_WebInvestigateManager {
 
   // ── update ───────────────────────────────────────────────────────
   update() {
-    // Completion hold: keep the overlay rendered for a beat, then hand off.
-    if (this._done) {
-      if (millis() >= this._doneHoldUntil) {
-        this._done  = false;
-        this.active = false;
-        this.onAllSeen?.();
-      }
+    if (!this.active) return;
+
+    // Text box (description / completion line)
+    if (this._phase === "detail" || this._phase === "complete") {
+      this._typer.update();
+      this._arrow.setEnabled(!this._typer.typing);
+      this._arrow.update();
       return;
     }
 
-    if (!this.active || this._phase !== "web") return;
+    // Sub-option chooser
+    if (this._phase === "option") {
+      this._optionMgr.update();
+      return;
+    }
+
+    if (this._phase !== "web") return;
 
     if (this._fadingIn && this._currentDim < PA_WebInvestigateManager.DIM_ALPHA) {
       this._currentDim = Math.min(
@@ -1315,12 +1347,14 @@ class PA_WebInvestigateManager {
     background(12, 12, 18);
     if (this._bgImg) image(this._bgImg, 0, 0, width, height);
 
+    // "start": scene + investigate frame + tiny hint, waiting for first click.
     if (this._phase === "start") {
-      this._drawStartScreen();
+      this._drawFrame(this._investigateFrame);
+      this._drawActivateHint();
       return;
     }
 
-    // Dim overlay
+    // Dim overlay (web vision active)
     push();
     noStroke();
     fill(12, 12, 18, this._currentDim);
@@ -1331,164 +1365,140 @@ class PA_WebInvestigateManager {
     this._drawRects();
     this._drawObjects();
 
-    if (this._phase === "detail") this._drawDetailPanel();
+    // Frame: investigate frame while scanning; VN frame during text / choice.
+    const textPhase =
+      this._phase === "detail" ||
+      this._phase === "complete" ||
+      this._phase === "option";
+    this._drawFrame(textPhase ? this._vnFrame : this._investigateFrame);
+
+    if (this._phase === "option") this._optionMgr.render();
+    if (this._phase === "detail" || this._phase === "complete")
+      this._drawTextBox();
+  }
+
+  _drawFrame(img) {
+    if (!img) return;
+    push();
+    image(img, 0, 0, width, height);
+    pop();
   }
 
   // ── input ────────────────────────────────────────────────────────
   mousePressed() {
-    if (!this.active || this._done) return; // ignore clicks during the hand-off hold
+    if (!this.active) return;
 
+    // "start": any click activates web vision.
     if (this._phase === "start") {
-      const bw = 260, bh = 52;
-      const bx = width / 2 - bw / 2, by = height / 2 - bh / 2;
-      if (mouseX > bx && mouseX < bx + bw && mouseY > by && mouseY < by + bh) {
-        this._phase      = "web";
-        this._currentDim = 0;
-        this._fadingIn   = true;
-        this._generateWeb();
+      this._phase      = "web";
+      this._currentDim = 0;
+      this._fadingIn   = true;
+      this._generateWeb();
+      return;
+    }
+
+    // "web": click a revealed object → its description (or sub-option chooser).
+    if (this._phase === "web" && this._threadsBuilt) {
+      for (const rec of this._rects) {
+        if (rec.threadProgress >= 1 && this._ptInImg(mouseX, mouseY, rec.objRef.img)) {
+          this._selObj = rec;
+          const subs = rec.objRef.subOptions;
+          if (subs && subs.length) {
+            // Defer description to the chosen sub-option's text.
+            this._optionMgr.onFinish = (chosenText) => {
+              this._showDetail(chosenText ?? rec.objRef.text);
+            };
+            this._optionMgr.start({ choices: subs });
+            this._phase = "option";
+          } else {
+            this._showDetail(rec.objRef.text);
+          }
+          return;
+        }
       }
       return;
     }
 
-    if (this._phase === "web" && this._threadsBuilt) {
-      for (const rec of this._rects) {
-        if (rec.threadProgress >= 1 && this._ptInImg(mouseX, mouseY, rec.objRef.img)) {
-          this._selObj    = rec;
-          this._selSubIdx = null;
-          this._phase     = "detail";
-          this._buildDetailBtns();
-          return;
-        }
-      }
+    // "option": delegate clicks to the oval chooser.
+    if (this._phase === "option") {
+      this._optionMgr.mousePressed();
+      return;
     }
 
-    if (this._phase === "detail") {
-      for (const btn of this._detailBtns) {
-        if (mouseX >= btn.x && mouseX <= btn.x + btn.w &&
-            mouseY >= btn.y && mouseY <= btn.y + btn.h) {
-          btn.action();
-          return;
-        }
+    // "detail" / "complete": advance the text box.
+    if (this._phase === "detail" || this._phase === "complete") {
+      if (this._typer.typing) { this._typer.revealAll(); this._arrow.reset(); return; }
+      if (this._phase === "complete") {
+        // Final line dismissed — hand off to the next scene (afternoon/dinner).
+        this.active = false;
+        this.onAllSeen?.();
+        return;
       }
+      // Description dismissed — mark seen, then continue or finish.
+      this._markSeen();
+      if (this._seenSet.size >= (this._config?.objects || []).length) {
+        this._phase = "complete";
+        this._beginText(PA_WebInvestigateManager.DONE_LINE);
+      } else {
+        this._selObj = null;
+        this._phase  = "web";
+      }
+      return;
     }
   }
 
-  // ── detail panel UI ──────────────────────────────────────────────
-  _buildDetailBtns() {
-    this._detailBtns = [];
-    const obj  = this._selObj?.objRef;
-    if (!obj) return;
-    const subs = obj.subOptions;
+  // Enter the "detail" phase, showing `txt` in the VN text box.
+  _showDetail(txt) {
+    this._phase = "detail";
+    this._beginText(txt);
+  }
 
-    if (subs && this._selSubIdx === null) {
-      // Show the two sub-option buttons
-      subs.forEach((sub, i) => {
-        this._detailBtns.push({
-          x: 320, y: 380 + i * 50, w: 384, h: 36,
-          label: sub.label,
-          action: () => {
-            this._selSubIdx = i;
-            this._markSeen();
-            this._buildDetailBtns();
-          },
-        });
-      });
-    } else {
-      // Back button
-      this._detailBtns.push({
-        x: 452, y: 450, w: 120, h: 34,
-        label: "Back",
-        action: () => {
-          if (!subs) this._markSeen(); // no sub-options: mark on Back
-          this._selObj    = null;
-          this._selSubIdx = null;
-          this._phase     = "web";
-          this._detailBtns = [];
-        },
-      });
-    }
+  _beginText(txt) {
+    this._detailText = String(txt || "");
+    this._typer.start(this._detailText);
+    this._arrow.setEnabled(false);
   }
 
   _markSeen() {
     if (!this._selObj) return;
     const name = this._selObj.objRef.name;
+    this._selObj.clicked = true;
     if (this._seenSet.has(name)) return;
     this._seenSet.add(name);
-    this._selObj.clicked = true;
-
-    const total = (this._config?.objects || []).length;
-    if (this._seenSet.size >= total) {
-      // All seen — hold briefly (rendered) then hand off via update().
-      this._done          = true;
-      this._doneHoldUntil = millis() + 120;
-    }
   }
 
-  _drawDetailPanel() {
-    const obj  = this._selObj?.objRef;
-    if (!obj) return;
-    const subs = obj.subOptions;
-
+  // ── description text box (VN-style) ───────────────────────────────
+  _drawTextBox() {
+    const tr = PA_WebInvestigateManager.TEXT_RECT;
     push();
-    // Semi-transparent dark overlay
-    fill(0, 0, 0, 180);
-    noStroke();
-    rect(0, 0, width, height);
-
-    // Panel box
-    fill(20, 18, 25, 230);
-    stroke(180, 190, 220, 160);
-    strokeWeight(1);
-    rect(220, 120, 584, 360, 6);
-
-    // Title
     if (this._font) textFont(this._font);
     noStroke();
-    fill(200, 210, 255);
-    textSize(20);
+    fill(0xf0, 0xf0, 0xf0);
+    textSize(PA_WebInvestigateManager.TEXT_SIZE);
+    textLeading(PA_WebInvestigateManager.TEXT_LEAD);
     textAlign(LEFT, TOP);
-    text(obj.name.toUpperCase(), 240, 138);
-
-    // Main text
-    fill(210, 210, 220);
-    textSize(16);
     textWrap(WORD);
-    const bodyText = (subs && this._selSubIdx !== null)
-      ? subs[this._selSubIdx].text
-      : obj.text;
-    text(bodyText, 240, 172, 544, 180);
+    text(this._typer.visibleText, tr.x, tr.y, tr.w, tr.h);
 
-    // Buttons
-    for (const btn of this._detailBtns) {
-      fill(40, 36, 52);
-      stroke(160, 170, 200, 180);
-      strokeWeight(1);
-      rect(btn.x, btn.y, btn.w, btn.h, 4);
-      noStroke();
-      fill(210, 215, 255);
-      textSize(15);
-      textAlign(CENTER, CENTER);
-      text(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
+    // Blinking advance indicator (spider image, anchored bottom-right)
+    if (!this._typer.typing && this._arrowImg) {
+      tint(255, this._arrow.alpha);
+      image(this._arrowImg, 843 - 24, 525 - 24, 24, 24);
+      noTint();
     }
     pop();
   }
 
-  // ── start screen ────────────────────────────────────────────────
-  _drawStartScreen() {
-    const bw = 260, bh = 52;
-    const bx = width / 2 - bw / 2, by = height / 2 - bh / 2;
-    const hovered = mouseX > bx && mouseX < bx + bw && mouseY > by && mouseY < by + bh;
+  // ── tiny "web vision" activation hint (bottom-center) ─────────────
+  _drawActivateHint() {
     push();
-    stroke(200, 210, 255, hovered ? 255 : 160);
-    strokeWeight(1);
-    fill(12, 12, 18, hovered ? 200 : 140);
-    rect(bx, by, bw, bh, 4);
-    noStroke();
-    fill(200, 210, 255, hovered ? 255 : 200);
-    textAlign(CENTER, CENTER);
-    textSize(16);
     if (this._font) textFont(this._font);
-    text("WEB VISION ACTIVATE", width / 2, height / 2);
+    noStroke();
+    const pulse = 150 + 80 * (0.5 - 0.5 * Math.cos(millis() / 500));
+    fill(200, 210, 255, pulse);
+    textAlign(CENTER, BOTTOM);
+    textSize(13);
+    text("· activate web vision ·", width / 2, height - 24);
     pop();
   }
 

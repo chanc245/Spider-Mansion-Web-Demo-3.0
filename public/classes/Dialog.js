@@ -57,6 +57,10 @@ class Dialog {
     });
     this.arrow = new Blinker({ periodMs: opts.arrowBlinkPeriodMs ?? 900 });
 
+    // Advance indicator image (replaces the ">" glyph)
+    this.arrowImagePath = opts.arrowImage ?? "assets/ui/ui_text_spiderBlinker.png";
+    this.arrowImg = null;
+
     // Wrap cache — avoid re-wrapping the same text every draw frame
     this._wrapCache = new Map();
 
@@ -93,6 +97,7 @@ class Dialog {
 
   preload() {
     if (this.frameImagePath) this.frameImg = loadImage(this.frameImagePath);
+    if (this.arrowImagePath) this.arrowImg = loadImage(this.arrowImagePath);
     this.font = loadFont(this.fontPath);
   }
 
@@ -200,17 +205,14 @@ class Dialog {
       pop();
     }
 
-    // 6. Blinking arrow
-    if (!this.typer.typing && uiA > 0) {
-      const ax = 843;
-      const ay = 525;
+    // 6. Blinking advance indicator (spider image, anchored bottom-right)
+    if (!this.typer.typing && uiA > 0 && this.arrowImg) {
+      const aw = 24, ah = 24;
+      const ax = 843, ay = 525;
       push();
-      if (this.font) textFont(this.font);
-      textSize(24);
-      textAlign(RIGHT, BOTTOM);
-      noStroke();
-      fill(0xf0, 0xf0, 0xf0, Math.min(255, this.arrow.alpha * (uiA / 255)));
-      text(">", ax, ay);
+      tint(255, Math.min(255, this.arrow.alpha * (uiA / 255)));
+      image(this.arrowImg, ax - aw, ay - ah, aw, ah);
+      noTint();
       pop();
     }
 
