@@ -22,6 +22,10 @@ let _prevNotebookImage = null;
 
 let showQuizAfterDialog = true;
 
+// Day 0 pre-quiz tutorial overlay (full-screen image carousel, runs once).
+let tutorial;
+let tutorialHasRun = false;
+
 // --- Title/End screens ---
 let imgTitle, imgEnd;
 
@@ -133,6 +137,22 @@ const D1_ATTIC_WEB_CONFIG = {
 // PRELOAD
 // ─────────────────────────────────────────────────────────────────
 function preload() {
+  // Day 0 pre-quiz tutorial — 8 instructional images, clicked through.
+  tutorial = new TutorialOverlay({
+    imagePaths: [
+      "assets/tutorial/tut_1.png",
+      "assets/tutorial/tut_2.png",
+      "assets/tutorial/tut_3.png",
+      "assets/tutorial/tut_4.png",
+      "assets/tutorial/tut_5.png",
+      "assets/tutorial/tut_6.png",
+      "assets/tutorial/tut_7.png",
+      "assets/tutorial/tut_8.png",
+    ],
+    fadeOutMs: 450,
+  });
+  tutorial.preload();
+
   imgTitle = loadImage("assets/cg_titlePage.png");
   imgEnd   = loadImage("assets/cg_endPage.png");
 
@@ -374,7 +394,23 @@ function draw() {
 
     _activeLogView.render(_activeQuiz.notebookX, _activeQuiz.notebookY);
 
-    if (_activeLogView.alpha > 200 && _activeLogView._canShowInputThisPage()) {
+    // Tutorial only runs on Day 0, before the quiz Q&A begins.
+    if (
+      _activeQuiz === quiz &&
+      notebookReady &&
+      !tutorialHasRun &&
+      !tutorial.active
+    ) {
+      tutorial.start();
+    }
+    const tutorialActive = _activeQuiz === quiz && tutorial.active;
+
+    if (tutorialActive) {
+      _activeLogView.input.hide();
+    } else if (
+      _activeLogView.alpha > 200 &&
+      _activeLogView._canShowInputThisPage()
+    ) {
       _activeLogView.input.show();
     }
 
@@ -392,6 +428,13 @@ function draw() {
 
     // Decorative frame on top of everything (bg + notebook + log text)
     _activeQuiz.renderFrame();
+
+    // Tutorial overlay sits on top of everything (Day 0 only).
+    if (_activeQuiz === quiz) {
+      tutorial.update();
+      tutorial.render();
+      if (tutorial.done && !tutorialHasRun) tutorialHasRun = true;
+    }
 
     _prevNotebookReady = notebookReady;
     _prevNotebookImage = _activeQuiz.currentNotebook;
@@ -706,6 +749,12 @@ function mousePressed(event) {
   if (appState === "PA_DINNER")         { pa_dinnerMgr.mousePressed();          return; }
   if (appState === "PR_MUSIC_SEARCH")   { pr_musicSearchMgr.mousePressed();     return; }
   if (appState === "PA_WEB_INVESTIGATE"){ pa_webInvestigateMgr.mousePressed();  return; }
+
+  // Day 0 tutorial overlay swallows clicks (advance / dismiss) before the quiz.
+  if (appState === "PR_QUIZ" && tutorial && tutorial.active) {
+    tutorial.mousePressed();
+    return;
+  }
 
   if (dialog.isActive()) {
     dialog.mousePressed();
