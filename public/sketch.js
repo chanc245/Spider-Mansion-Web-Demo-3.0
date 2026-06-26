@@ -49,36 +49,36 @@ let appState = "TITLE";
 const D1_KITCHEN_OBJECTS = [
   {
     name: "window",
-    imgLine: "assets/inv_obj/obtLine_ktcn_01_Window.png",
-    imgFull: "assets/inv_obj/obt_ktcn_01_Window.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_01_Window.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_01_Window.png",
     img: { x: 483, y: 104, w: 123, h: 106.66 },
     text: "The window is open, letting in a slight breeze.",
   },
   {
     name: "ashes",
-    imgLine: "assets/inv_obj/obtLine_ktcn_02_Ashes.png",
-    imgFull: "assets/inv_obj/obt_ktcn_02_Ashes.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_02_Ashes.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_02_Ashes.png",
     img: { x: 270, y: 421, w: 41, h: 28 },
     text: "You notice ashes on the ground. They smell like more than just burnt food; there's something else in the scent.",
   },
   {
     name: "cigarette butts",
-    imgLine: "assets/inv_obj/obtLine_ktcn_03_CigaretteButt.png",
-    imgFull: "assets/inv_obj/obt_ktcn_03_CigaretteButt.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_03_CigaretteButt.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_03_CigaretteButt.png",
     img: { x: 306, y: 401, w: 39, h: 24 },
     text: "You find cigarette butts on the floor. Master Von Silken won't be pleased if he finds out Cook Harris is smoking in the kitchen. The smell is strong and herbal.",
   },
   {
     name: "cigarette box",
-    imgLine: "assets/inv_obj/obtLine_ktcn_04_CigeretteBox.png",
-    imgFull: "assets/inv_obj/obt_ktcn_04_CigeretteBox.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_04_CigeretteBox.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_04_CigeretteBox.png",
     img: { x: 859, y: 371, w: 60, h: 33 },
     text: "A doctor's note reads: \"If you smoke too often, your sense of taste and smell may become dull.\"",
   },
   {
     name: "recipe book",
-    imgLine: "assets/inv_obj/obtLine_ktcn_05_RecipeBook.png",
-    imgFull: "assets/inv_obj/obt_ktcn_05_RecipeBook.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_05_RecipeBook.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_05_RecipeBook.png",
     img: { x: 510, y: 213, w: 70, h: 58.17 },
     text: "You see a book near the window, its pages fluttering in the wind.",
     subOptions: [
@@ -88,15 +88,15 @@ const D1_KITCHEN_OBJECTS = [
   },
   {
     name: "ingredients",
-    imgLine: "assets/inv_obj/obtLine_ktcn_06_Ingredients.png",
-    imgFull: "assets/inv_obj/obt_ktcn_06_Ingredients.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_06_Ingredients.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_06_Ingredients.png",
     img: { x: 387, y: 299, w: 166, h: 86 },
     text: "All the ingredients are in good condition. You've heard he uses only high-quality produce. Not for Eva, though.",
   },
   {
     name: "pot",
-    imgLine: "assets/inv_obj/obtLine_ktcn_07_Pot.png",
-    imgFull: "assets/inv_obj/obt_ktcn_07_Pot.png",
+    imgLine: "assets/inv_obj/day1_kitchen/obtLine_ktcn_07_Pot.png",
+    imgFull: "assets/inv_obj/day1_kitchen/obt_ktcn_07_Pot.png",
     img: { x: 317, y: 224, w: 57, h: 66 },
     text: "There is leftover soup in the pot.",
     subOptions: [
@@ -163,16 +163,16 @@ function preload() {
   audioMgr.load("assets/audio/bg_ara_short.mp3", { loop: true, volume: 0.3, exclusive: true });
   // Day 1 quiz reading — Eva/Ara reads the puzzle aloud when the quiz opens.
   // Same volume (0.3) as the other voiceovers + BGM.
-  audioMgr.load("assets/dia_audio/d1_dia_quizRead.mp3", { volume: 0.3 });
+  audioMgr.load("assets/dia_audio/d1_dia/d1_dia_quizRead.mp3", { volume: 0.3 });
   audioMgr.load("assets/audio/dia_step.mp3");
   audioMgr.load("assets/audio/ui_clickDia.mp3", { volume: 0.5 });
 
   // Day 0
-  quiz    = new Day0Quiz({ nbInDur: 700, nbOutDur: 450 });
-  logView = new Day0QuizLog("day0");
+  quiz    = new QuizNotebook({ nbInDur: 700, nbOutDur: 450 });
+  logView = new QuizLog("day0");
 
   // Day 1 quiz (same notebook UI, different bg + puzzle)
-  quiz1    = new Day0Quiz({
+  quiz1    = new QuizNotebook({
     nbInDur:  700,
     nbOutDur: 450,
     bgPath: "assets/quiz/bg_quiz_day1_dinningRoom.png",
@@ -183,16 +183,16 @@ function preload() {
       label:    "day0\nlogs",
     },
     // Day-1-only extra bookmark: "day1 kitchen" → opens notebook_clue_d1.png.
-    // Placed 5px below the "clues" tag (default position handled in Day0Quiz).
+    // Placed 5px below the "clues" tag (default position handled in QuizNotebook).
     dayTag: {
       bookmark: "assets/quiz/bookmark_dayTag.png",
       page:     "assets/quiz/notebook_clue_d1.png",
       label:    "day1\nkitchen", // two lines to fit the narrow tab
     },
   });
-  logView1 = new Day0QuizLog("day1");
+  logView1 = new QuizLog("day1");
   // Read-only recap of the Day 0 log (no Eva, no input).
-  logViewDay0Notes = new Day0QuizLog("day0Notes", { readOnly: true });
+  logViewDay0Notes = new QuizLog("day0Notes", { readOnly: true });
 
   _activeQuiz    = quiz;
   _activeLogView = logView;
@@ -639,12 +639,12 @@ function startD1Quiz() {
 
   // Music box resumes (looping) under Eva/Ara reading the puzzle aloud.
   audioMgr.play("assets/audio/bg_ara_short.mp3", { loop: true, volume: 0.3, from: 0 });
-  audioMgr.play("assets/dia_audio/d1_dia_quizRead.mp3", { volume: 0.3, from: 0 });
+  audioMgr.play("assets/dia_audio/d1_dia/d1_dia_quizRead.mp3", { volume: 0.3, from: 0 });
 
   // If the player submits before the reading finishes, stop it so it doesn't
   // play over Eva's spoken response.
   logView1.onPlayerSubmit = () => {
-    audioMgr.stop("assets/dia_audio/d1_dia_quizRead.mp3", { fadeMs: 200 });
+    audioMgr.stop("assets/dia_audio/d1_dia/d1_dia_quizRead.mp3", { fadeMs: 200 });
   };
 }
 
@@ -652,7 +652,7 @@ function startD1Quiz() {
 function startD1NightPostQuiz(outcome = "good") {
   // Quiz is over — fade out the music box and stop the reading.
   audioMgr.stop("assets/audio/bg_ara_short.mp3", { fadeMs: 600 });
-  audioMgr.stop("assets/dia_audio/d1_dia_quizRead.mp3");
+  audioMgr.stop("assets/dia_audio/d1_dia/d1_dia_quizRead.mp3");
 
   appState = "DIA_VN";
   dialog.setScript(

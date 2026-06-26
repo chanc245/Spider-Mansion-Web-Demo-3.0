@@ -2,7 +2,7 @@
 // by the read-only "day0 notes" recap page in the Day 1 notebook.
 const DAY0_NOTEBOOK_KEY = "spiderMansion_day0_notebook";
 
-class Day0QuizLog {
+class QuizLog {
   // opts.readOnly → a paged, input-less viewer that renders saved Day 0 notes
   // (loaded from localStorage) instead of running a live Eva Q&A.
   constructor(dayKey = "day0", opts = {}) {
@@ -648,4 +648,4 @@ class Day0QuizLog {
     });
   }
 }
-window.Day0QuizLog = Day0QuizLog;
+window.QuizLog = QuizLog;

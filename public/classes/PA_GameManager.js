@@ -43,7 +43,7 @@ class PA_GameManager {
 
   // Call once from the main preload().
   preload() {
-    const base = "assets/mini_game/day1_kichen/";
+    const base = "assets/mini_game/day1_kichen_soup/";
     this._font = loadFont("assets/fonts/PixelMillennium.ttf"); // pixel font (Maid-to-Work)
     this._img = {
       bg: loadImage(base + "bg_chore1_kitchen.png"),

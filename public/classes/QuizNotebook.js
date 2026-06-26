@@ -1,4 +1,4 @@
-class Day0Quiz {
+class QuizNotebook {
   constructor(opts = {}) {
     // configurable slide durations (ms
     this.nbInDur  = opts.nbInDur  ?? 700; // bottom → visible
@@ -308,7 +308,7 @@ class Day0Quiz {
     pop();
   }
 
-  // visible state for Day0QuizLog
+  // visible state for QuizLog
   isNotebookShown() {
     return (
       this.nbT >= 0.999 &&
@@ -414,4 +414,4 @@ class Day0Quiz {
     this.scroll.start(this.yOffset, this.quizState ? height : 0);
   }
 }
-window.Day0Quiz = Day0Quiz;
+window.QuizNotebook = QuizNotebook;

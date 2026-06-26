@@ -466,7 +466,11 @@ class Dialog {
   _playDiaAudio(path) {
     this._stopDiaAudio();
     if (!path) return;
-    const fullPath = this.diaAudioDir + path;
+    // files live in per-day subfolders (e.g. d1_dia/d1_dia_01.mp3),
+    // derived from the filename's dX_dia prefix
+    const m = path.match(/^(d\d+_dia)_/);
+    const sub = m ? m[1] + "/" : "";
+    const fullPath = this.diaAudioDir + sub + path;
     try {
       if (this._diaAudioPath !== fullPath) {
         this._diaAudioEl = new Audio(fullPath);
