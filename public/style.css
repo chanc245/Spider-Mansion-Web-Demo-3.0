@@ -68,3 +68,112 @@ html {
   color: #777;
   font-style: italic;
 }
+
+/* ── Loading screen (#p5_loading) ─────────────────────────────────────
+   p5 keeps this element visible during preload() and removes it when all
+   assets finish loading. Themed spider-on-a-thread for Spider Mansion. */
+#p5_loading {
+  /* Confined to the game area (canvas is 1024x576, centered in the viewport
+     by the body flex layout). Centered the same way so the loader lands
+     exactly where the game will appear. */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1024px;
+  height: 576px;
+  max-width: 100vw;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+  color: #ece7f4;
+  font-family: "Georgia", "Times New Roman", serif;
+  animation: smFadeIn 0.4s ease both;
+}
+
+/* faint spider webs tucked into the top corners */
+#p5_loading .sm-corner {
+  position: absolute;
+  top: 0;
+  width: 200px;
+  height: 200px;
+  opacity: 0.28;
+  pointer-events: none;
+}
+#p5_loading .sm-corner-l { left: 0; }
+#p5_loading .sm-corner-r { right: 0; transform: scaleX(-1); }
+
+#p5_loading .sm-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* the whole thread + spider swings from the top like a pendulum */
+#p5_loading .sm-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 300px;
+  transform-origin: top center;
+  animation: smSwing 3s ease-in-out infinite;
+}
+#p5_loading .sm-thread {
+  width: 2px;
+  flex: 1;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.7));
+}
+#p5_loading .sm-spider {
+  font-size: 46px;
+  line-height: 1;
+  /* recolor the emoji to a solid white silhouette + soft glow */
+  filter: brightness(0) invert(1) drop-shadow(0 0 7px rgba(255, 255, 255, 0.45));
+  cursor: grab;
+  transition: transform 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+/* interactive: poke the spider and it scurries up the thread */
+#p5_loading .sm-drop:hover .sm-spider {
+  transform: translateY(-130px);
+}
+
+#p5_loading .sm-title {
+  margin-top: 26px;
+  font-size: 34px;
+  letter-spacing: 7px;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 0 16px rgba(255, 255, 255, 0.55), 0 2px 2px #000;
+  animation: smPulse 2.6s ease-in-out infinite;
+}
+#p5_loading .sm-sub {
+  margin-top: 10px;
+  font-size: 15px;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: #b4adc6;
+}
+/* animated trailing dots — each appears in turn, then all clear and re-add */
+#p5_loading .sm-dots > span { opacity: 0; }
+#p5_loading .sm-dots > span:nth-child(1) { animation: smDot1 1.5s steps(1, end) infinite; }
+#p5_loading .sm-dots > span:nth-child(2) { animation: smDot2 1.5s steps(1, end) infinite; }
+#p5_loading .sm-dots > span:nth-child(3) { animation: smDot3 1.5s steps(1, end) infinite; }
+
+@keyframes smFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes smSwing { 0%, 100% { transform: rotate(-24deg); } 50% { transform: rotate(24deg); } }
+@keyframes smPulse { 0%, 100% { opacity: 0.82; } 50% { opacity: 1; } }
+@keyframes smDot1 { 0%, 24% { opacity: 0; } 25%, 100% { opacity: 1; } }
+@keyframes smDot2 { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+@keyframes smDot3 { 0%, 74% { opacity: 0; } 75%, 100% { opacity: 1; } }
+
+/* respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  #p5_loading .sm-drop,
+  #p5_loading .sm-spider,
+  #p5_loading .sm-title { animation: none; }
+  #p5_loading .sm-dots > span { opacity: 1; animation: none; }
+}

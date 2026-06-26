@@ -14,6 +14,46 @@
     <title>Spider Mansion 3.0 Demo</title>
   </head>
   <body>
+    <!-- Custom loading screen. p5 looks for #p5_loading during preload() and
+         auto-removes it once all assets finish loading. -->
+    <div id="p5_loading">
+      <svg class="sm-corner sm-corner-l" viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="none" stroke="#cfc8da" stroke-width="0.6">
+          <line x1="0" y1="0" x2="100" y2="0" />
+          <line x1="0" y1="0" x2="92" y2="38" />
+          <line x1="0" y1="0" x2="71" y2="71" />
+          <line x1="0" y1="0" x2="38" y2="92" />
+          <line x1="0" y1="0" x2="0" y2="100" />
+          <path d="M22 0 A22 22 0 0 1 0 22" />
+          <path d="M48 0 A48 48 0 0 1 0 48" />
+          <path d="M74 0 A74 74 0 0 1 0 74" />
+          <path d="M98 0 A98 98 0 0 1 0 98" />
+        </g>
+      </svg>
+      <svg class="sm-corner sm-corner-r" viewBox="0 0 100 100" aria-hidden="true">
+        <g fill="none" stroke="#cfc8da" stroke-width="0.6">
+          <line x1="0" y1="0" x2="100" y2="0" />
+          <line x1="0" y1="0" x2="92" y2="38" />
+          <line x1="0" y1="0" x2="71" y2="71" />
+          <line x1="0" y1="0" x2="38" y2="92" />
+          <line x1="0" y1="0" x2="0" y2="100" />
+          <path d="M22 0 A22 22 0 0 1 0 22" />
+          <path d="M48 0 A48 48 0 0 1 0 48" />
+          <path d="M74 0 A74 74 0 0 1 0 74" />
+          <path d="M98 0 A98 98 0 0 1 0 98" />
+        </g>
+      </svg>
+
+      <div class="sm-loader">
+        <div class="sm-drop" title="boo!">
+          <span class="sm-thread"></span>
+          <span class="sm-spider">🕷️</span>
+        </div>
+        <div class="sm-title">loading<span class="sm-dots"><span>.</span><span>.</span><span>.</span></span></div>
+        <div class="sm-sub">entering the mansion</div>
+      </div>
+    </div>
+
     <div id="canvas-container"></div>
     <main></main>
 
