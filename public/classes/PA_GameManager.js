@@ -39,6 +39,24 @@ class PA_GameManager {
     this.BAR_Y = 38;
     this.BAR_W = 724;
     this.BAR_H = 22;
+
+    // audio paths (registered in preload, played via the shared global audioMgr)
+    const sfxBase = "assets/mini_game/audio/";
+    this.SFX = {
+      countdown: sfxBase + "ui_countDown.mp3", // 3-2-1-Go! chime
+      good: sfxBase + "food_normal.mp3", // caught good food
+      bad: sfxBase + "food_bad.mp3", // caught bad food
+      success: sfxBase + "ui_success.mp3", // "Success!" banner
+    };
+    this.BGM = sfxBase + "bg_music.mp3"; // looping mini-game background music
+  }
+
+  // Play a one-shot mini-game sfx through the shared global AudioManager.
+  // Restarts from 0 so rapid catches always re-trigger the sound.
+  _playSfx(path) {
+    if (typeof audioMgr !== "undefined" && audioMgr) {
+      audioMgr.play(path, { from: 0 });
+    }
   }
 
   // Call once from the main preload().
@@ -61,6 +79,16 @@ class PA_GameManager {
       loadImage(base + "food_bad_fishBone.png"),
       loadImage(base + "food_bad_halfApple.png"),
     ];
+
+    // Register mini-game audio with the shared AudioManager (lazy-loads if absent).
+    if (typeof audioMgr !== "undefined" && audioMgr) {
+      audioMgr.load(this.SFX.countdown, { volume: 0.5 });
+      audioMgr.load(this.SFX.good, { volume: 0.5 });
+      audioMgr.load(this.SFX.bad, { volume: 0.5 });
+      audioMgr.load(this.SFX.success, { volume: 0.5 });
+      // exclusive: starting it fades out any other BGM (e.g. bg_ara) for the round
+      audioMgr.load(this.BGM, { loop: true, volume: 0.3, exclusive: true });
+    }
   }
 
   start(opts = {}) {
@@ -100,6 +128,14 @@ class PA_GameManager {
     // phase: countdown → playing → ended
     this._phase = "countdown";
     this._phaseStartMs = millis();
+
+    // countdown chime fires once per beat (3 · 2 · 1 · Go!) — see update()
+    this._cdBeatsPlayed = 0;
+
+    // background music loops for the whole round (stopped in the ended hand-off)
+    if (typeof audioMgr !== "undefined" && audioMgr) {
+      audioMgr.play(this.BGM, { loop: true, volume: 0.3, from: 0, exclusive: true });
+    }
   }
 
   _makeItem(pool) {
@@ -134,6 +170,14 @@ class PA_GameManager {
     const dt = deltaTime / 16.667; // frame-rate-independent step
 
     if (this._phase === "countdown") {
+      // chime on each beat, matching the on-screen labels:
+      // 3 (0ms) · 2 (700) · 1 (1400) · Go! (2100)
+      const elapsed = now - this._phaseStartMs;
+      const beat = elapsed < 700 ? 1 : elapsed < 1400 ? 2 : elapsed < 2100 ? 3 : 4;
+      if (beat > this._cdBeatsPlayed) {
+        this._cdBeatsPlayed = beat;
+        this._playSfx(this.SFX.countdown);
+      }
       // 3 → 2 → 1 → Go! (700ms each), then start falling
       if (now - this._phaseStartMs >= 2700) {
         this._phase = "playing";
@@ -159,6 +203,7 @@ class PA_GameManager {
         this._progress = this.TARGET;
         this._phase = "ended";
         this._phaseStartMs = now;
+        this._playSfx(this.SFX.success); // chime as the "Success!" banner appears
       }
       return;
     }
@@ -169,6 +214,10 @@ class PA_GameManager {
         this._finished = true;
         this.active = false;
         if (this._canvasEl) this._canvasEl.style.imageRendering = ""; // restore smooth scaling
+        // fade out the mini-game BGM so it doesn't bleed into the next scene
+        if (typeof audioMgr !== "undefined" && audioMgr) {
+          audioMgr.stop(this.BGM, { fadeMs: 600 });
+        }
         this.onFinish?.();
       }
     }
@@ -192,8 +241,13 @@ class PA_GameManager {
       item.y + item.h > z.y;
 
     if (hit) {
-      if (isGood) this._progress = Math.min(this.TARGET, this._progress + 1);
-      else this._progress = Math.max(0, this._progress - 1);
+      if (isGood) {
+        this._progress = Math.min(this.TARGET, this._progress + 1);
+        this._playSfx(this.SFX.good);
+      } else {
+        this._progress = Math.max(0, this._progress - 1);
+        this._playSfx(this.SFX.bad);
+      }
       this._respawn(item, other);
       return;
     }
