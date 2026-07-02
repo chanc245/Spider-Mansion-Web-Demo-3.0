@@ -20,6 +20,12 @@ app.use(express.json());
 // serve static files from /public
 app.use(express.static(join(__dirname, "public")));
 
+// /dev overlay (localhost:3001/dev/): the static line above already serves
+// any override that exists in public/dev/. This fallback serves everything
+// NOT overridden from the shared public/ files, so /dev is a variant that
+// only stores its changed/new files and shares the rest with the root version.
+app.use("/dev", express.static(join(__dirname, "public")));
+
 const port = process.env.PORT || 3001;
 
 // -------- OPENAI CLIENT --------
