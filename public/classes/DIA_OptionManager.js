@@ -58,7 +58,8 @@ class DIA_OptionManager {
     this._tagRight = loadImage("assets/ui/ui_optionTag_Right.png");
     // Same decorative frame the VN uses — drawn on top when this manager owns
     // the screen (its own bg, i.e. the VN has faded out, e.g. the dinner loop).
-    this._frameImg = loadImage("assets/ui/ui_decor_frame.png");
+    // The option screen has no speaker, so use the nameless VN frame.
+    this._frameImg = loadImage("assets/ui/ui_dia_decor_frame_noName.png");
     // Font is shared with Dialog; load independently here as fallback
     this._font = loadFont("assets/fonts/Forum-Regular.ttf");
   }

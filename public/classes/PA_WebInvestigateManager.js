@@ -109,8 +109,9 @@ class PA_WebInvestigateManager {
     if (!this._font) this._font = loadFont("assets/fonts/Forum-Regular.ttf");
 
     // Frames + chooser assets (load once — guard against repeat configs).
+    // Investigate VN text is narration only (no speaker), so use the nameless VN frame.
     if (!this._vnFrame)
-      this._vnFrame = loadImage("assets/ui/ui_decor_frame.png");
+      this._vnFrame = loadImage("assets/ui/ui_dia_decor_frame_noName.png");
     if (!this._investigateFrame)
       this._investigateFrame = loadImage(
         "assets/ui/ui_investigate_decor_frame.png",

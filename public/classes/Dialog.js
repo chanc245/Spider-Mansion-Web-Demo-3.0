@@ -7,9 +7,15 @@ class Dialog {
     this.w = opts.w ?? 750;
     this.h = opts.h ?? 141;
 
-    // Decorative frame — sits above BG/CG, below text
-    this.frameImagePath = opts.frameImage ?? "assets/ui/ui_decor_frame.png";
-    this.frameImg = null;
+    // Decorative frame — sits above BG/CG, below text. Two variants: one with a
+    // nameplate slot for lines that have a speaker, and one without for narrator
+    // lines (charName blank or whitespace-only, e.g. charName: " ").
+    this.frameImageNamePath =
+      opts.frameImageName ?? "assets/ui/ui_dia_decor_frame_name.png";
+    this.frameImageNoNamePath =
+      opts.frameImageNoName ?? "assets/ui/ui_dia_decor_frame_noName.png";
+    this.frameImgName = null;
+    this.frameImgNoName = null;
 
     // Font
     this.fontPath = opts.fontPath ?? "assets/fonts/Forum-Regular.ttf";
@@ -119,7 +125,10 @@ class Dialog {
   }
 
   preload() {
-    if (this.frameImagePath) this.frameImg = loadImage(this.frameImagePath);
+    if (this.frameImageNamePath)
+      this.frameImgName = loadImage(this.frameImageNamePath);
+    if (this.frameImageNoNamePath)
+      this.frameImgNoName = loadImage(this.frameImageNoNamePath);
     if (this.arrowImagePath) this.arrowImg = loadImage(this.arrowImagePath);
     this.font = loadFont(this.fontPath);
   }
@@ -273,10 +282,17 @@ class Dialog {
 
   // Decorative frame overlay — drawn above BG/CG, below text.
   _drawFrame(uiA) {
-    if (!this.frameImg || this.showFrame === false) return;
+    if (this.showFrame === false) return;
+    // Pick the variant for the current line: the "name" frame when the line has
+    // a real speaker, otherwise the "noName" frame (narrator lines whose
+    // charName is blank or whitespace-only, e.g. charName: " ").
+    const cur = this.script[this.index] || {};
+    const hasName = !!(cur.charName && cur.charName.trim());
+    const frame = hasName ? this.frameImgName : this.frameImgNoName;
+    if (!frame) return;
     push();
     tint(255, uiA);
-    image(this.frameImg, 0, 0, width, height);
+    image(frame, 0, 0, width, height);
     noTint();
     pop();
   }
