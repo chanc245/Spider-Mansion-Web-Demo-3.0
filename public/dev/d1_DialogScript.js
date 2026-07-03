@@ -88,47 +88,42 @@ const d1_vnScript_morning = [
   },
   {
     charName: " ",
+    bg: "assets/cg/cg_d101_paam_BrushHair.png",
     text: "Letting her sit in front of the mirror, you carefully comb her silky, long blonde hair, which is as light and delicate as a spider web.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_eva_smiling.png",
     text: "As you comb, you notice how fragile she looks, with a small body that doesn't resemble a lady living in a wealthy mansion.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_eva_smiling.png",
     text: "Instead, she appears more like a young maid deprived of nutritious meals, her slight frame making her seem younger than her age.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_eva_smiling.png",
     text: "You suddenly feel a pair of eyes on you and realize that Eva is watching you through the reflection in the mirror.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_eva_blushing.png",
+    bg: "assets/cg/cg_d102_paam_BrushHairEvaBlush.png",
     text: "Caught in the moment, she has a look of embarrassment on her face.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_eva_blushing.png",
     soundEffect: "assets/audio/dia_evaStomachGrowls.mp3",
     text: "Just as you open your mouth to apologize, Eva's stomach growls loudly.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_blushing.png",
     text: "...",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_eva_blushing.png",
     text: "You check the time and realize it's almost time for a meal, but the food hasn't arrived in Eva's room yet.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_smiling.png",
+    bg: "assets/bg/bg_pa_3f_Attic.png",
     text: "Oh, it's fine. I'm not really hungry. I can just skip the meal.",
   },
   {
