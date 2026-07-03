@@ -106,7 +106,7 @@ class Dialog {
     this.onOption = null;
 
     // SFX
-    this.clickSfxPath = opts.clickSfxPath ?? "assets/audio/ui_clickDia.mp3";
+    this.clickSfxPath = opts.clickSfxPath ?? "assets/audio/ui/ui_clickDia.mp3";
     this.clickSfxVolume = opts.clickSfxVolume ?? 1.0;
 
     // Dialogue voiceover — private Audio element, isolated from AudioManager

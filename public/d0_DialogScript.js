@@ -53,7 +53,7 @@ const d0_vnScript = [
     charCG: "assets/charImg/char_ara_smiling.png",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Let’s.... play a game.",
-    soundEffect: "assets/audio/bg_ara.mp3",
+    soundEffect: "assets/audio/bgm/bg_ara.mp3",
     diaAudio: "d0_dia_04.mp3",
   },
   {
@@ -153,7 +153,7 @@ const d0_vnScript_postQuiz_Good = [
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
     text: "She gave me a small wave before closing the door to her room.",
-    soundEffect: "assets/audio/dia_door.mp3",
+    soundEffect: "assets/audio/sfx/dia_door.mp3",
   },
   {
     charName: "Me",
@@ -235,7 +235,7 @@ const d0_vnScript_chris = [
     charName: "Me",
     bg: "assets/bg/bg_pr_ex_MansionFrontDoor.png",
     text: "!!??",
-    soundEffect: "assets/audio/bg_ara_short.mp3",
+    soundEffect: "assets/audio/bgm/bg_ara_short.mp3",
   },
   {
     charName: "Me",
@@ -251,14 +251,14 @@ const d0_vnScript_chris = [
     charName: "Me",
     bg: "assets/bg/bg_pr_ex_MansionFrontDoor.png",
     text: "Could anyone possibly live in such a place?",
-    stopSound: "assets/audio/bg_ara_short.mp3",
+    stopSound: "assets/audio/bgm/bg_ara_short.mp3",
     fadeSoundMs: 5000,
   },
   {
     charName: " ",
     bg: "assets/bg/bg_pr_ex_MansionFrontDoor.png",
     text: "Before I could think about what to do next, I found myself knocking.",
-    soundEffect: "assets/audio/dia_knockDoor.mp3",
+    soundEffect: "assets/audio/sfx/dia_knockDoor.mp3",
   },
   {
     charName: "Me",
@@ -269,13 +269,13 @@ const d0_vnScript_chris = [
     charName: " ",
     bg: "assets/bg/bg_pr_1f_PortraitHallway.png",
     text: "The door creaked open slightly. I took a deep breath and carefully pushed the door open further to step inside.",
-    soundEffect: "assets/audio/dia_door.mp3",
+    soundEffect: "assets/audio/sfx/dia_door.mp3",
   },
   {
     charName: " ",
     bg: "assets/bg/bg_pr_1f_PortraitHallway.png",
     text: "Before I can make another move, I heard it again—",
-    soundEffect: "assets/audio/bg_ara.mp3",
+    soundEffect: "assets/audio/bgm/bg_ara.mp3",
   },
   {
     charName: " ",
@@ -291,13 +291,13 @@ const d0_vnScript_chris = [
     charName: " ",
     bg: "assets/bg/bg_pr_1f_PortraitHallway.png",
     text: "I decided to follow the sound of the music box.",
-    soundEffect: "assets/audio/dia_step.mp3",
+    soundEffect: "assets/audio/sfx/dia_step.mp3",
   },
   {
     charName: "Me",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "This is it. The sound is coming from here.",
-    stopSound: "assets/audio/bg_ara.mp3",
+    stopSound: "assets/audio/bgm/bg_ara.mp3",
     fadeSoundMs: 15000,
   },
   {

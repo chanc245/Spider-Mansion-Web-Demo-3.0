@@ -38,9 +38,9 @@ const d1_vnScript_morning = [
   {
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
-    soundEffect: "assets/audio/dia_birdChatter.mp3",
+    soundEffect: "assets/audio/sfx/dia_birdChatter.mp3",
     // Day 0's looping BGM is still playing here — fade it out as Day 1 begins.
-    stopSound: "assets/audio/bg_ara.mp3",
+    stopSound: "assets/audio/bgm/bg_ara.mp3",
     fadeSoundMs: 1500,
     text: "You awaken to the sound of birds chattering outside your window. You realize it is time to do your duty – wake Eva up.",
   },
@@ -79,7 +79,7 @@ const d1_vnScript_morning = [
   {
     charName: " ",
     charCG: "assets/charImg/char_eva_sleepy.png",
-    soundEffect: "assets/audio/dia_evaSmallYawn.mp3",
+    soundEffect: "assets/audio/sfx/dia_evaSmallYawn.mp3",
     text: "Eva responds with a small yawn, still appearing a bit sleepy.",
   },
   {
@@ -113,7 +113,7 @@ const d1_vnScript_morning = [
   {
     charName: " ",
     charCG: "assets/charImg/char_eva_blushing.png",
-    soundEffect: "assets/audio/dia_evaStomachGrowls.mp3",
+    soundEffect: "assets/audio/sfx/dia_evaStomachGrowls.mp3",
     text: "Just as you open your mouth to apologize, Eva's stomach growls loudly.",
   },
   {
@@ -579,7 +579,7 @@ const d1_vnScript_night_pre = [
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
     // Music box starts here and loops through the search + into the dining room.
-    soundEffect: "assets/audio/bg_ara_short.mp3",
+    soundEffect: "assets/audio/bgm/bg_ara_short.mp3",
     text: "You wake to the sound of a music box playing.",
   },
   {
@@ -618,7 +618,7 @@ const d1_vnScript_night_dining = [
   {
     charName: "Eva",
     // Music box stops as she invites the player to sit.
-    stopSound: "assets/audio/bg_ara_short.mp3",
+    stopSound: "assets/audio/bgm/bg_ara_short.mp3",
     fadeSoundMs: 800,
     text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
     diaAudio: "d1_dia_02.mp3",

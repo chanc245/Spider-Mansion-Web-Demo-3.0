@@ -39,9 +39,9 @@ const d1_vnScript_morning = [
   {
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
-    soundEffect: "assets/audio/dia_birdChatter.mp3",
+    soundEffect: "assets/audio/sfx/dia_birdChatter.mp3",
     // Day 0's looping BGM is still playing here — fade it out as Day 1 begins.
-    stopSound: "assets/audio/bg_ara.mp3",
+    stopSound: "assets/audio/bgm/bg_ara.mp3",
     fadeSoundMs: 1500,
     text: "You awaken to the sound of birds chattering outside your window. You realize it is time to do your duty – wake Eva up.",
   },
@@ -80,7 +80,7 @@ const d1_vnScript_morning = [
   {
     charName: " ",
     charCG: "assets/charImg/char_eva_sleepy.png",
-    soundEffect: "assets/audio/dia_evaSmallYawn.mp3",
+    soundEffect: "assets/audio/sfx/dia_evaSmallYawn.mp3",
     text: "Eva responds with a small yawn, still appearing a bit sleepy.",
   },
   {
@@ -89,7 +89,7 @@ const d1_vnScript_morning = [
   },
   {
     charName: " ",
-    bg: "assets/cg/cg_d101_paam_BrushHair.png",
+    bg: "assets/cg/event/cg_d101_paam_BrushHair.png",
     text: "Letting her sit in front of the mirror, you carefully comb her silky, long blonde hair, which is as light and delicate as a spider web.",
   },
   {
@@ -106,12 +106,12 @@ const d1_vnScript_morning = [
   },
   {
     charName: " ",
-    bg: "assets/cg/cg_d102_paam_BrushHairEvaBlush.png",
+    bg: "assets/cg/event/cg_d102_paam_BrushHairEvaBlush.png",
     text: "Caught in the moment, she has a look of embarrassment on her face.",
   },
   {
     charName: " ",
-    soundEffect: "assets/audio/dia_evaStomachGrowls.mp3",
+    soundEffect: "assets/audio/sfx/dia_evaStomachGrowls.mp3",
     text: "Just as you open your mouth to apologize, Eva's stomach growls loudly.",
   },
   {
@@ -257,7 +257,7 @@ const d1_vnScript_lunch = [
     // the rest of the conversation. keepCG holds her across the narration lines.
     charName: " ",
     charCG: "assets/charImg/char_eva_smiling.png",
-    soundEffect: "assets/audio/bg_eva.mp3",
+    soundEffect: "assets/audio/bgm/bg_eva.mp3",
     loopSound: true,
     text: "You see Eva holding a book while a music box slowly turns beside her. Instead of reading, she gazes into a corner of her room, her mind seemingly wandering off somewhere.",
   },
@@ -274,7 +274,7 @@ const d1_vnScript_lunch = [
   {
     charName: " ",
     charCG: "assets/charImg/char_eva_happy.png",
-    stopSound: "assets/audio/bg_eva.mp3",
+    stopSound: "assets/audio/bgm/bg_eva.mp3",
     fadeSoundMs: 5000,
     text: "Her face brightens with a smile, looking more excited to see you than the food itself.",
   },
@@ -295,7 +295,7 @@ const d1_vnScript_lunch = [
   },
   {
     charName: "Eva",
-    bg: "assets/cg/cg_d103_paam_HappyEatingEva.png",
+    bg: "assets/cg/event/cg_d103_paam_HappyEatingEva.png",
     // charCG: "assets/charImg/char_eva_happy.png",
     text: "Wow, this tastes so great! Thank you. It's been a while since I had a nice meal like this.",
   },
@@ -590,7 +590,7 @@ const d1_vnScript_night_pre = [
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
     // Music box starts here and loops through the search + into the dining room.
-    soundEffect: "assets/audio/bg_ara_short.mp3",
+    soundEffect: "assets/audio/bgm/bg_ara_short.mp3",
     text: "You wake to the sound of a music box playing.",
   },
   {
@@ -629,7 +629,7 @@ const d1_vnScript_night_dining = [
   {
     charName: "Eva",
     // Music box stops as she invites the player to sit.
-    stopSound: "assets/audio/bg_ara_short.mp3",
+    stopSound: "assets/audio/bgm/bg_ara_short.mp3",
     fadeSoundMs: 800,
     text: "Please, take a seat in front of me. I've prepared a meal for you as well.",
     diaAudio: "d1_dia_02.mp3",
@@ -641,7 +641,7 @@ const d1_vnScript_night_dining = [
   {
     charName: " ",
     // charCG: "assets/charImg/char_ara_smiling.png",
-    soundEffect: "assets/audio/dia_evaStomachGrowls.mp3",
+    soundEffect: "assets/audio/sfx/dia_evaStomachGrowls.mp3",
     text: "Before you can think more into that idea, somehow, you feel a strong hunger, as if you haven't eaten all day. You sit across from Eva's seat.",
   },
   {
@@ -659,7 +659,7 @@ const d1_vnScript_night_dining = [
     // Event CG (full-screen bg): your hand reaching for the cover, a muddy
     // reflection of yourself in it. Replaces the tall dining CG for this beat;
     // Eva's interruption below restores the dining view.
-    bg: "assets/cg/cg_d104_prpm_ReachReflection.png",
+    bg: "assets/cg/event/cg_d104_prpm_ReachReflection.png",
     text: "Somehow, you don't feel this is a good choice. Your hand trembles as it reaches for the cover.",
   },
   // Both choices converge — Ara interrupts either way.
@@ -733,14 +733,14 @@ const d1_vnScript_night_postQuiz_tail = [
   {
     charName: " ",
     // Event CG (bg): the decomposed-bird reveal.
-    bg: "assets/cg/cg_d106_prpm_RottenFood.png",
+    bg: "assets/cg/event/cg_d106_prpm_RottenFood.png",
     text: "Underneath the cover is a decomposed bird, clearly left untouched for at least a week.",
   },
   {
     charName: " ",
     // Event CG (bg): Ara's side profile. Persists as the background through her
     // commentary below until cg_d107.
-    bg: "assets/cg/cg_d105_prpm_AraSide.png",
+    bg: "assets/cg/event/cg_d105_prpm_AraSide.png",
     text: "You avoid eye contact with the dead bird and instead glance at Eva, sensing a slight feeling of blame towards her for the situation.",
   },
   {
@@ -774,7 +774,7 @@ const d1_vnScript_night_postQuiz_tail = [
   // the end of the scene — the black-out line below drops it for a clean fade.
   {
     charName: " ",
-    bg: "assets/cg/cg_d107_prpm_AraEat.png",
+    bg: "assets/cg/event/cg_d107_prpm_AraEat.png",
     text: "Your sudden, unexpected action surprises Eva. She then gives a satisfied grotesque smile.",
   },
   {
