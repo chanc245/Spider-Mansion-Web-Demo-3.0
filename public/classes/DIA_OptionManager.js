@@ -34,6 +34,7 @@ class DIA_OptionManager {
 
     // Layout & web state (reset each start())
     this._layout = []; // { label, x, y, w }
+    this._bounds = null; // cached layout bbox {minX,minY,maxX,maxY}, set in _computeLayout
     this._webBufs = []; // p5.Graphics per option
     this._webProg = []; // strand count drawn so far
 
@@ -202,6 +203,21 @@ class DIA_OptionManager {
         w: widths[i],
       };
     });
+
+    // Cache the layout bounding box — the layout is fixed while the screen is
+    // shown, so _drawBg/_drawPrompt read these instead of recomputing min/max
+    // (with throwaway map() arrays) every frame.
+    this._bounds = null;
+    if (this._layout.length) {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const o of this._layout) {
+        if (o.x < minX) minX = o.x;
+        if (o.y < minY) minY = o.y;
+        if (o.x + o.w > maxX) maxX = o.x + o.w;
+        if (o.y + TAG_H > maxY) maxY = o.y + TAG_H;
+      }
+      this._bounds = { minX, minY, maxX, maxY };
+    }
   }
 
   _ensureBuffers() {
@@ -221,8 +237,8 @@ class DIA_OptionManager {
   // ── draw helpers ─────────────────────────────────────────────────
   // Question/header centered above the option tags (e.g. music search).
   _drawPrompt() {
-    if (!this._layout.length) return;
-    const minY = Math.min(...this._layout.map((o) => o.y));
+    if (!this._bounds) return;
+    const minY = this._bounds.minY;
     push();
     if (this._font) textFont(this._font);
     textAlign(CENTER, BOTTOM);
@@ -243,12 +259,7 @@ class DIA_OptionManager {
     // radial vignette darkens around the option tags.
     if (this._bgImg) image(this._bgImg, 0, 0, width, height);
 
-    const minX = Math.min(...this._layout.map((o) => o.x));
-    const minY = Math.min(...this._layout.map((o) => o.y));
-    const maxX = Math.max(...this._layout.map((o) => o.x + o.w));
-    const maxY = Math.max(
-      ...this._layout.map((o) => o.y + DIA_OptionManager.TAG_H),
-    );
+    const { minX, minY, maxX, maxY } = this._bounds;
 
     const rx = minX - EXPAND,
       ry = minY - EXPAND;

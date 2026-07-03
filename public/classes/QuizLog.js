@@ -37,6 +37,12 @@ class QuizLog {
     this._justSubmitted = false;
     this.waitingForAI = false;
 
+    // Cached DOM handle + last-applied input geometry so _positionInput can skip
+    // redundant querySelector / position() / size() writes (which force a style
+    // recalc) on the frames where nothing about the input actually moved.
+    this._canvasEl = null;
+    this._lastInputGeom = { x: null, y: null, w: null };
+
     // Outcome + transitions
     this._solved = false;
     this.onSolved = null;
@@ -452,9 +458,24 @@ class QuizLog {
     const x = boxX + this.inputPaddingX;
 
     this.input.show();
-    const canvasRect = document.querySelector("canvas").getBoundingClientRect();
-    this.input.position(canvasRect.left + x - 15, canvasRect.top + y - 20);
-    this.input.size(w, this.inputH);
+    if (!this._canvasEl || !this._canvasEl.isConnected)
+      this._canvasEl = document.querySelector("canvas");
+    if (!this._canvasEl) return;
+    const canvasRect = this._canvasEl.getBoundingClientRect();
+    const px = canvasRect.left + x - 15;
+    const py = canvasRect.top + y - 20;
+    // Only touch the DOM when the geometry actually changed — otherwise these
+    // position()/size() calls trigger a style recalc every single frame.
+    const g = this._lastInputGeom;
+    if (px !== g.x || py !== g.y) {
+      this.input.position(px, py);
+      g.x = px;
+      g.y = py;
+    }
+    if (w !== g.w) {
+      this.input.size(w, this.inputH);
+      g.w = w;
+    }
   }
 
   _drawNavButton(btn, label1Based, alpha) {

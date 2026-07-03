@@ -19,6 +19,9 @@ class TagOverlayAnimator {
     hideVia = "entrance",
   } = {}) {
     this.label = label;
+    // Pre-split the (possibly multi-line) label once. _drawLabel runs several
+    // times per frame during the quiz, so re-splitting every draw is wasteful.
+    this._labelLines = String(label ?? "").split("\n");
     this.labelSize = labelSize;
     this.baseX = baseX;
     this.y = y;
@@ -123,7 +126,7 @@ class TagOverlayAnimator {
     noStroke();
     fill(0);
     textAlign(CENTER, CENTER);
-    const lines = String(this.label).split("\n");
+    const lines = this._labelLines;
     const lh = this.labelSize;
     const cx = xNow + this.w / 2;
     const cy0 = baseY + this.h / 2 - 2 - ((lines.length - 1) * lh) / 2;
