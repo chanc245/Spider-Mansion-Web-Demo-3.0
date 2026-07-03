@@ -110,12 +110,13 @@ function preload() {
       bookmark: "assets/quiz/bookmark_dayTag.png", // reuse (mirrored) art for now
       label:    "day0\nlogs",
     },
-    // Day-1-only extra bookmark: "day1 kitchen" → opens notebook_clue_d1.png.
-    // Placed 5px below the "clues" tag (default position handled in QuizNotebook).
+    // Day-1-only extra bookmark: "day 1 kitchen" → opens notebook_clue_d1.png.
+    // Uses the same clues bookmark art (76×83) as the "day 0 clues" tab and sits
+    // 5px below it (default position handled in QuizNotebook).
     dayTag: {
-      bookmark: "assets/quiz/bookmark_dayTag.png",
+      bookmark: "assets/quiz/bookmark_clues.png",
       page:     "assets/quiz/notebook_clue_d1.png",
-      label:    "day1\nkitchen", // two lines to fit the narrow tab
+      label:    "day 1\nkitchen", // two lines to fit the narrow tab
     },
   });
   logView1 = new QuizLog("day1");

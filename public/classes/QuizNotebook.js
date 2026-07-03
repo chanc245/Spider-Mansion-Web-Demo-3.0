@@ -94,14 +94,18 @@ class QuizNotebook {
 
     // left-side tags
     this.tagClues = new TagOverlayAnimator({
-      label: "clues",
-      baseX: 5,
+      label: "day 0\nclues",
+      labelSize: 16, // two short lines in the narrow 76×38 tab
+      // 76-wide tab right-aligned so its inner edge still meets the notebook
+      // (baseX 29 + w 76 = 105 ≈ notebook left edge), matching the day tag below.
+      baseX: 29,
       y: 750,
-      w: 100,
-      h: 50,
+      w: 76,
+      h: 38,
       font: this.userFont,
       slideDur: 300,
       aniDirection: "LTR",
+      tuckSliver: 12,
       bgImg: this.imgBookmarkClues,
     });
 
@@ -114,6 +118,7 @@ class QuizNotebook {
       font: this.userFont,
       slideDur: 300,
       aniDirection: "LTR",
+      tuckSliver: 12,
       bgImg: this.imgBookmarkRules,
     });
 
@@ -126,6 +131,8 @@ class QuizNotebook {
       font: this.userFont,
       slideDur: 300,
       aniDirection: "RTL",
+      tuckSliver: 12,
+      hideVia: "reverse", // rests tucked (sliver) while the log page is shown
       bgImg: this.imgBookmarkLogs,
     });
 
@@ -176,16 +183,16 @@ class QuizNotebook {
     // optional day-1+ tag: a third bookmark, by default 5px below "clues"
     if (this.dayTagCfg) {
       const cfg = this.dayTagCfg;
-      // "clues" occupies screen-Y [750-height, 750-height + 50]; default 5px under it.
+      // Matches the "clues" tab (76×38); sits 5px below it by default.
       const w = cfg.w ?? 76;
       const h = cfg.h ?? 38;
-      // Right-align with the clues/rules tabs (baseX 5, width 100 → inner edge at
-      // x=105) so this narrower tab still meets the notebook's left edge.
+      // Right-align with the clues tab (inner edge at x=105) so it meets the
+      // notebook's left edge.
       const x = cfg.x ?? 5 + 100 - w;
-      const y = cfg.y ?? 750 + 50 + 5; // clues.y + clues.h + 5
+      const y = cfg.y ?? 750 + 38 + 5; // clues.y + clues.h + 5
       this.tagDayTag = new TagOverlayAnimator({
         label: cfg.label ?? "",
-        labelSize: cfg.labelSize ?? 16, // smaller — the day tab is narrower
+        labelSize: cfg.labelSize ?? 16, // two short lines in the narrow tab
         baseX: x,
         y,
         w,
@@ -193,6 +200,7 @@ class QuizNotebook {
         font: this.userFont,
         slideDur: 300,
         aniDirection: "LTR",
+        tuckSliver: cfg.tuckSliver ?? 12,
         bgImg: this.imgBookmarkDayTag,
       });
       this._pageTags.push({
@@ -269,6 +277,8 @@ class QuizNotebook {
       for (const pt of this._pageTags) {
         if (!pt.tag.overlayActive) pt.tag.drawClickable();
       }
+      // the log tab itself is tucked while its page is shown → leave a sliver
+      if (!this.tagLog.overlayActive) this.tagLog.drawTucked();
     } else {
       // on a page: the log tag returns; the page's own tag hides while there
       if (!this.tagLog.overlayActive) this.tagLog.drawClickable();
@@ -276,6 +286,8 @@ class QuizNotebook {
         const isOwnPage = this.currentNotebook === pt.page;
         if (isOwnPage) {
           if (!pt.tag.overlayActive && !pt.hidden) pt.tag.drawClickable();
+          // Tucked & hidden on its own page → keep a sliver poking out.
+          else if (!pt.tag.overlayActive && pt.hidden) pt.tag.drawTucked();
         } else {
           if (!pt.tag.overlayActive) pt.tag.drawClickable();
         }

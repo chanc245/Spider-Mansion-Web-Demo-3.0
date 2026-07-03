@@ -13,6 +13,10 @@ class TagOverlayAnimator {
     slideDur = 300,
     bgImg = null,
     flipX = false,
+    tuckSliver = 0, // px left poking out past the notebook edge when tucked in
+    // Which animation hides the tab: page tags tuck in on "entrance" (end at
+    // overlayEndX); the log tab tucks away on "reverse" (rests at overlayStartX).
+    hideVia = "entrance",
   } = {}) {
     this.label = label;
     this.labelSize = labelSize;
@@ -26,11 +30,21 @@ class TagOverlayAnimator {
     this.flipX = flipX; // mirror the bookmark art (e.g. left art reused on the right)
 
     this.aniDirection = aniDirection;
-    const autoStart = this.aniDirection === "RTL" ? baseX - w : baseX;
-    const autoEnd = this.aniDirection === "RTL" ? baseX : baseX + w;
+    // Stop the tuck a few px short (tuckSliver) so a little of the tab still
+    // pokes out past the notebook edge instead of hiding completely. The sliver
+    // is applied to whichever end is the tucked/hidden one for this direction:
+    // LTR tabs tuck toward overlayEndX (right); RTL tabs toward overlayStartX (left).
+    const autoStart = this.aniDirection === "RTL" ? baseX - w + tuckSliver : baseX;
+    const autoEnd = this.aniDirection === "RTL" ? baseX : baseX + w - tuckSliver;
 
     this.overlayStartX = overlayStartX ?? autoStart;
     this.overlayEndX = overlayEndX ?? autoEnd;
+
+    // Resting position while hidden — used to keep a sliver visible behind the
+    // notebook once the tab is fully tucked.
+    this.hideVia = hideVia;
+    this.tuckedX =
+      this.hideVia === "reverse" ? this.overlayStartX : this.overlayEndX;
 
     this.slide = new Tween({ from: 0, to: 1, dur: slideDur });
 
@@ -141,6 +155,27 @@ class TagOverlayAnimator {
       rect(xNow, baseY, this.w, this.h);
     }
 
+    this._drawLabel(xNow, baseY);
+    pop();
+  }
+
+  // Draw the tag frozen at its tucked-in position (overlayEndX). Used to keep a
+  // sliver poking out behind the notebook once the tag's page is open. Drawn
+  // before the notebook image so only the sliver past the edge stays visible.
+  drawTucked() {
+    const xNow = this.tuckedX;
+    const baseY = this.y - height;
+
+    push();
+    noStroke();
+    if (this.bgImg) {
+      this._blitBg(xNow, baseY);
+    } else {
+      fill(0, 0, 0, 120);
+      rect(xNow + 3, baseY + 3, this.w, this.h);
+      fill(255);
+      rect(xNow, baseY, this.w, this.h);
+    }
     this._drawLabel(xNow, baseY);
     pop();
   }
