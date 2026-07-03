@@ -124,6 +124,7 @@ const d1_vnScript_morning = [
   {
     charName: "Eva",
     bg: "assets/bg/bg_pa_3f_Attic.png",
+    charCG: "assets/charImg/char_eva_smiling.png",
     text: "Oh, it's fine. I'm not really hungry. I can just skip the meal.",
   },
   {
@@ -159,12 +160,12 @@ const d1_vnScript_kitchen = [
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_cook_angry.png",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "When you reach for the plate, Cook Harris yells at you aggressively.",
   },
   {
     charName: "Cook",
-    charCG: "assets/charImg/char_cook_angry.png",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "Hey! What do you think you're touching with your filthy hands?",
   },
   {
@@ -199,17 +200,17 @@ const d1_vnScript_kitchen = [
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_cook_annoyed.png",
+    charCG: "assets/charImg/char_cook_angry.png",
     text: "Cook Harris points at a bucket filled with inedible scraps.",
   },
   {
     charName: " ",
-    charCG: "assets/charImg/char_cook_annoyed.png",
+    charCG: "assets/charImg/char_cook_angry.png",
     text: "You feel disgusted. Both by the food and Cook Harris's reaction.",
   },
   {
     charName: "Cook",
-    charCG: "assets/charImg/char_cook_angry.png",
+    charCG: "assets/charImg/char_cook_annoyed.png",
     text: "Bring that food or get out of my face. I have to serve this gorgeous meal to the master.",
   },
   {
