@@ -151,6 +151,7 @@ class QuizNotebook {
       const h = cfg.h ?? 38;
       const x = cfg.x ?? 919; // match the log tab's inner edge (notebook right)
       const y = cfg.y ?? 680 + 50 + 5; // log.y + log.h + 5 → ~5px under "log"
+      const sliver = cfg.tuckSliver ?? 12; // px left poking out when tucked
       this.tagDay0Notes = new TagOverlayAnimator({
         label: cfg.label ?? "",
         labelSize: cfg.labelSize ?? 16,
@@ -166,8 +167,8 @@ class QuizNotebook {
         // how the left tabs tuck right). The default RTL overlay coords do the
         // opposite — slide it out to the right, then hide — which read as a
         // pop-out-then-vanish bounce. Override the coords explicitly.
-        overlayStartX: x,     // base position (protruding right of the notebook)
-        overlayEndX:   x - w, // tucked left, hidden under the notebook
+        overlayStartX: x,              // base position (protruding right of the notebook)
+        overlayEndX:   x - w + sliver, // tucked left, leaving a sliver past the edge
         // The art is drawn for a left tab; mirror it for the right side.
         flipX: cfg.flipX ?? true,
         bgImg: this.imgBookmarkDay0Notes,
