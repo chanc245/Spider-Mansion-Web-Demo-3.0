@@ -416,7 +416,8 @@ class Dialog {
       this._bgPan.start(this._bgPanY, target, line.bgPanMs ?? this.bgPanMs);
     }
     if (line.stopSound) this._stopSoundLine(line);
-    if (line.soundEffect && this.audio) this.audio.play(line.soundEffect);
+    if (line.soundEffect && this.audio)
+      this.audio.play(line.soundEffect, { loop: !!line.loopSound });
     this._playDiaAudio(line.diaAudio ?? null);
 
     const hadCG = !!this.cg.curPath;

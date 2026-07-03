@@ -11,6 +11,7 @@ text — the dialogue/narration text
 
 AUDIO
 soundEffect — plays via AudioManager (BGM, ambience, one-shot SFX)
+loopSound — when true, the line's soundEffect loops until stopped (default one-shot)
 stopSound — stops a sound; can be a path string or { path, fadeMs }
 fadeSoundMs — fade duration in ms when used alongside stopSound
 diaAudio — voiceover file for this line (plays on the isolated private channel)
@@ -256,7 +257,9 @@ const d1_vnScript_lunch = [
     // the rest of the conversation. keepCG holds her across the narration lines.
     charName: " ",
     charCG: "assets/charImg/char_eva_smiling.png",
-    text: "You see Eva holding a book, but instead of reading it, she is staring into a corner of her room, her mind seemingly wandering off somewhere.",
+    soundEffect: "assets/audio/bg_eva.mp3",
+    loopSound: true,
+    text: "You see Eva holding a book while a music box slowly turns beside her. Instead of reading, she gazes into a corner of her room, her mind seemingly wandering off somewhere.",
   },
   {
     charName: " ",
@@ -271,6 +274,8 @@ const d1_vnScript_lunch = [
   {
     charName: " ",
     charCG: "assets/charImg/char_eva_happy.png",
+    stopSound: "assets/audio/bg_eva.mp3",
+    fadeSoundMs: 5000,
     text: "Her face brightens with a smile, looking more excited to see you than the food itself.",
   },
   {
@@ -286,11 +291,12 @@ const d1_vnScript_lunch = [
   {
     charName: "Eva",
     charCG: "assets/charImg/char_eva_smiling.png",
-    text: "I had a friend who also really liked a corner like that.",
+    text: "I had a friend who also really liked a corner like that...",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_happy.png",
+    bg: "assets/cg/cg_d103_paam_HappyEatingEva.png",
+    // charCG: "assets/charImg/char_eva_happy.png",
     text: "Wow, this tastes so great! Thank you. It's been a while since I had a nice meal like this.",
   },
   {
@@ -300,37 +306,41 @@ const d1_vnScript_lunch = [
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_smiling.png",
+    // charCG: "assets/charImg/char_eva_smiling.png",
     text: "Oh… I mean, I haven't been receiving any food for lunch until you came.",
   },
   {
     charName: " ",
     keepCG: true,
+    bg: "assets/bg/bg_pa_3f_Attic.png",
+    charCG: "assets/charImg/char_eva_smiling.png",
     text: "Eva's voice lowers as she speaks, and she looks a little guilty as well.",
   },
   {
     charName: " ",
     keepCG: true,
+    charCG: "assets/charImg/char_eva_smiling.png",
     text: "You already have a feeling why Eva didn't eat Cook Harris's meal after seeing what he showed you.",
   },
   {
     charName: " ",
     keepCG: true,
+    charCG: "assets/charImg/char_eva_smiling.png",
     text: "You think back to what Cook Harris said. He seemed to be ignoring Eva's existence entirely.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_smiling.png",
+    charCG: "assets/charImg/char_eva_happy.png",
     text: "It is true that I didn't eat the meal Mr. Harris prepared for me.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_smiling.png",
+    charCG: "assets/charImg/char_eva_happy.png",
     text: "As I haven't touched food for a while, Mr. Harris probably thinks I'm not hungry.",
   },
   {
     charName: "Eva",
-    charCG: "assets/charImg/char_eva_smiling.png",
+    charCG: "assets/charImg/char_eva_happy.png",
     text: "So I don't mind too much! I'm fine with it.",
   },
   {
@@ -442,22 +452,27 @@ const d1_vnScript_dinner_pre = [
   },
   {
     charName: "Master",
+    charCG: "assets/charImg/char_lucius_annoyed.png",
     text: "Why is the food taking so long?",
   },
   {
     charName: "Lady Master",
+    charCG: "assets/charImg/char_rosa_normal.png",
     text: "Why don't you try to be more patient?",
   },
   {
     charName: "Master",
+    charCG: "assets/charImg/char_lucius_annoyed.png",
     text: "Huh, what do you mean? I AM patient.",
   },
   {
     charName: "Mistress",
+    charCG: "assets/charImg/char_emme_smile.png",
     text: "Honey, the food will come soon if we wait a little longer. Let's be understanding.",
   },
   {
     charName: "Master",
+    charCG: "assets/charImg/char_lucius_smile.png",
     text: "Hmm, sure my dear. It'll come any second.",
   },
   // sketch.js starts the dinner DIA_OPTION loop when this script finishes
@@ -626,6 +641,7 @@ const d1_vnScript_night_dining = [
   {
     charName: " ",
     // charCG: "assets/charImg/char_ara_smiling.png",
+    soundEffect: "assets/audio/dia_evaStomachGrowls.mp3",
     text: "Before you can think more into that idea, somehow, you feel a strong hunger, as if you haven't eaten all day. You sit across from Eva's seat.",
   },
   {

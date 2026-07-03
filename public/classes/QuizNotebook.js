@@ -63,7 +63,7 @@ class QuizNotebook {
     this.bg = loadImage(this.bgPath);
     this.frameImg = loadImage(this.framePath);
     this.notebookLog = loadImage("assets/quiz/notebook_QuestionLog_1.png");
-    this.notebookClues = loadImage("assets/quiz/notebook_Clues.png");
+    this.notebookClues = loadImage("assets/quiz/notebook_clue_d0.png");
     this.notebookRules = loadImage("assets/quiz/notebook_Rules.png");
     this.userFont = loadFont("assets/fonts/BradleyHandITCTT-Bold.ttf");
 
@@ -99,7 +99,7 @@ class QuizNotebook {
       // 76-wide tab right-aligned so its inner edge still meets the notebook
       // (baseX 29 + w 76 = 105 ≈ notebook left edge), matching the day tag below.
       baseX: 29,
-      y: 750,
+      y: 735, // align with the "day0 logs" tab on the right (680 + 50 + 5)
       w: 76,
       h: 38,
       font: this.userFont,
@@ -190,7 +190,7 @@ class QuizNotebook {
       // Right-align with the clues tab (inner edge at x=105) so it meets the
       // notebook's left edge.
       const x = cfg.x ?? 5 + 100 - w;
-      const y = cfg.y ?? 750 + 38 + 5; // clues.y + clues.h + 5
+      const y = cfg.y ?? this.tagClues.y + 38 + 5; // clues.y + clues.h + 5
       this.tagDayTag = new TagOverlayAnimator({
         label: cfg.label ?? "",
         labelSize: cfg.labelSize ?? 16, // two short lines in the narrow tab
