@@ -369,8 +369,9 @@ class PA_WebInvestigateManager {
     const pulse = 150 + 80 * (0.5 - 0.5 * Math.cos(millis() / 500));
     fill(200, 210, 255, pulse);
     textAlign(CENTER, BOTTOM);
-    textSize(13);
-    text("· activate web vision ·", width / 2, height - 24);
+    textSize(20);
+    textLeading(22);
+    text("click to activate \nWEB VISION", width / 2, height - 15);
     pop();
   }
 
