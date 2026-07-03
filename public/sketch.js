@@ -565,9 +565,10 @@ function startD1Quiz() {
 
 // outcome: "good" (default) or "bad" — only the opening dialogue differs.
 function startD1NightPostQuiz(outcome = "good") {
-  // Quiz is over — fade out the music box and stop the reading.
-  audioMgr.stop("assets/audio/bg_ara_short.mp3", { fadeMs: 600 });
-  audioMgr.stop("assets/dia_audio/d1_dia/d1_dia_quizRead.mp3");
+  // Quiz is over — gently fade the music box (and any leftover reading) away as
+  // the VN scene opens, so it dissolves out instead of cutting off.
+  audioMgr.stop("assets/audio/bg_ara_short.mp3", { fadeMs: 1800 });
+  audioMgr.stop("assets/dia_audio/d1_dia/d1_dia_quizRead.mp3", { fadeMs: 600 });
 
   appState = State.DIA_VN;
   dialog.setScript(
