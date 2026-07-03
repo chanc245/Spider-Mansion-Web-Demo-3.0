@@ -25,90 +25,119 @@
 
   // Day 0 — title > vn > quiz > vn > end
   const day0Flow = [
-    ["Title (reload)", () => location.reload()],
-    ["Intro VN", () => {
-      showQuizAfterDialog = true;
-      _activeQuiz = quiz; _activeLogView = logView;
-      dialog.setScript(d0_vnScript);
-      dialog.onFinish = () => {
-        if (showQuizAfterDialog) {
-          _activeQuiz = quiz; _activeLogView = logView;
-          quiz.setQuizState(true);
-          appState = "PR_QUIZ";
-        }
-      };
-      appState = "DIA_VN";
-      dialog.start();
-    }],
-    ["Quiz", () => {
-      showQuizAfterDialog = true;
-      _activeQuiz = quiz; _activeLogView = logView;
-      _prevNotebookReady = quiz.isNotebookShown();
-      _prevNotebookImage = quiz.currentNotebook;
-      quiz.setQuizState(true);
-      appState = "PR_QUIZ";
-    }],
-    ["Good Ending VN", () => {
-      showQuizAfterDialog = false;
-      dialog.setScript(d0_vnScript_postQuiz_Good);
-      dialog.onFinish = () => startD1Kitchen(); // morning → kitchen
-      dialog.queueNext(d1_vnScript_morning); // seamless chain into Day 1 (no black flash)
-      appState = "DIA_VN";
-      dialog.start();
-    }],
-    ["Bad Ending VN", () => {
-      showQuizAfterDialog = false;
-      dialog.setScript(d0_vnScript_postQuiz_Bad);
-      dialog.onFinish = () => startD1Kitchen(); // morning → kitchen
-      dialog.queueNext(d1_vnScript_morning); // seamless chain into Day 1 (no black flash)
-      appState = "DIA_VN";
-      dialog.start();
-    }],
-    ["END", () => { appState = "END"; }],
+    ["0 · PR-TITLE", () => location.reload()],
+    [
+      "1 · PR-VN-intro",
+      () => {
+        showQuizAfterDialog = true;
+        _activeQuiz = quiz;
+        _activeLogView = logView;
+        dialog.setScript(d0_vnScript);
+        dialog.onFinish = () => {
+          if (showQuizAfterDialog) {
+            _activeQuiz = quiz;
+            _activeLogView = logView;
+            quiz.setQuizState(true);
+            appState = "PR_QUIZ";
+          }
+        };
+        appState = "DIA_VN";
+        dialog.start();
+      },
+    ],
+    [
+      "2 · PR-QUIZ-day0",
+      () => {
+        showQuizAfterDialog = true;
+        _activeQuiz = quiz;
+        _activeLogView = logView;
+        _prevNotebookReady = quiz.isNotebookShown();
+        _prevNotebookImage = quiz.currentNotebook;
+        quiz.setQuizState(true);
+        appState = "PR_QUIZ";
+      },
+    ],
+    [
+      "3 · PR-VN-post quiz dia (good)",
+      () => {
+        showQuizAfterDialog = false;
+        dialog.setScript(d0_vnScript_postQuiz_Good);
+        dialog.onFinish = () => startD1Kitchen(); // morning → kitchen
+        dialog.queueNext(d1_vnScript_morning); // seamless chain into Day 1 (no black flash)
+        appState = "DIA_VN";
+        dialog.start();
+      },
+    ],
+    [
+      "3 · PR-VN-post quiz dia (bad)",
+      () => {
+        showQuizAfterDialog = false;
+        dialog.setScript(d0_vnScript_postQuiz_Bad);
+        dialog.onFinish = () => startD1Kitchen(); // morning → kitchen
+        dialog.queueNext(d1_vnScript_morning); // seamless chain into Day 1 (no black flash)
+        appState = "DIA_VN";
+        dialog.start();
+      },
+    ],
+    [
+      "END",
+      () => {
+        appState = "END";
+      },
+    ],
   ];
 
   // Day 1 — full chain, each button continues into the next stage
   const day1Flow = [
-    ["1 · Morning",             () => startDay1()],
-    ["1b · Attic Investigate",  () => startPA_WebInvestigate(D1_ATTIC_WEB_CONFIG, () => startD1Kitchen())],
-    ["2 · Kitchen (VN)",        () => startD1Kitchen()],
-    ["2b · Kitchen Mini-Game",  () => startPA_Game({ id: "ingredients" }, null, startD1PostCook)],
-    ["3 · Lunch (attic)",       () => startD1Lunch()],
-    ["4 · Afternoon",           () => startD1Afternoon()],
-    ["5 · Kitchen Investigate", () => startD1KitchenInvestigate()],
-    ["6 · Dinner",              () => startD1Dinner()],
-    ["7 · Dinner Talk",         () => startD1DinnerOptions()],
-    ["8 · Night",               () => startD1Night()],
-    ["9 · Music Search",        () => startD1MusicSearch()],
-    ["10 · Night Dining",       () => startD1NightDining()],
-    ["11 · Day 1 Quiz",         () => startD1Quiz()],
-    ["12 · Post-Quiz (good)",   () => startD1NightPostQuiz("good")],
-    ["12 · Post-Quiz (bad)",    () => startD1NightPostQuiz("bad")],
+    ["1 · PA-VN-Morning", () => startDay1()],
+    [
+      "1b · PA-INVEST-Attic",
+      () => startPA_WebInvestigate(D1_ATTIC_WEB_CONFIG, () => startD1Kitchen()),
+    ],
+    ["2 · PA-VN-Kitchen", () => startD1Kitchen()],
+    [
+      "2b · PA-GAME-Soup",
+      () => startPA_Game({ id: "ingredients" }, null, startD1PostCook),
+    ],
+    ["3 · PA-VN-Lunch", () => startD1Lunch()],
+    ["4 · PA-VN-Afternoon", () => startD1Afternoon()],
+    ["5 · PA-INVEST-Kitchen", () => startD1KitchenInvestigate()],
+    ["6 · PA-VN-Dinner", () => startD1Dinner()],
+    ["7 · PA-INTERACT-Dinner talk", () => startD1DinnerOptions()],
+    ["8 · PR-VN-Night start", () => startD1Night()],
+    ["9 · PR-FIND-Music Search", () => startD1MusicSearch()],
+    ["10 · PR-VN-pre quiz dia", () => startD1NightDining()],
+    ["11 · PR-QUIZ-day1", () => startD1Quiz()],
+    ["12 · PR-VN-post quiz dia (good)", () => startD1NightPostQuiz("good")],
+    ["12 · PR-VN-post quiz dia (bad)", () => startD1NightPostQuiz("bad")],
   ];
 
   // Isolated — load one script/state on its own (no chaining). For art/text checks.
   const isolatedScripts = [
     // Day 1
-    ["d1 morning",       "d1_vnScript_morning"],
-    ["d1 kitchen",       "d1_vnScript_kitchen"],
-    ["d1 lunch",         "d1_vnScript_lunch"],
-    ["d1 afternoon",     "d1_vnScript_afternoon_pre"],
-    ["d1 afternoon-post","d1_vnScript_afternoon_post"],
-    ["d1 dinner",        "d1_vnScript_dinner_pre"],
-    ["d1 dinner-post",   "d1_vnScript_dinner_post"],
-    ["d1 night",         "d1_vnScript_night_pre"],
-    ["d1 night-dining",  "d1_vnScript_night_dining"],
-    ["d1 post-quiz good","d1_vnScript_night_postQuiz_Good"],
+    ["d1 morning", "d1_vnScript_morning"],
+    ["d1 kitchen", "d1_vnScript_kitchen"],
+    ["d1 lunch", "d1_vnScript_lunch"],
+    ["d1 afternoon", "d1_vnScript_afternoon_pre"],
+    ["d1 afternoon-post", "d1_vnScript_afternoon_post"],
+    ["d1 dinner", "d1_vnScript_dinner_pre"],
+    ["d1 dinner-post", "d1_vnScript_dinner_post"],
+    ["d1 night", "d1_vnScript_night_pre"],
+    ["d1 night-dining", "d1_vnScript_night_dining"],
+    ["d1 post-quiz good", "d1_vnScript_night_postQuiz_Good"],
     ["d1 post-quiz bad", "d1_vnScript_night_postQuiz_Bad"],
     // Day 0
-    ["d0 intro",         "d0_vnScript"],
-    ["d0 chris",         "d0_vnScript_chris"],
-    ["d0 good",          "d0_vnScript_postQuiz_Good"],
-    ["d0 bad",           "d0_vnScript_postQuiz_Bad"],
+    ["d0 intro", "d0_vnScript"],
+    ["d0 chris", "d0_vnScript_chris"],
+    ["d0 good", "d0_vnScript_postQuiz_Good"],
+    ["d0 bad", "d0_vnScript_postQuiz_Bad"],
   ];
 
   const runScriptByName = (name) => {
-    if (typeof window[name] === "undefined" && eval(`typeof ${name}`) === "undefined") {
+    if (
+      typeof window[name] === "undefined" &&
+      eval(`typeof ${name}`) === "undefined"
+    ) {
       console.warn("[debug] script not found:", name);
       return;
     }
@@ -126,19 +155,19 @@
   // (Sub-states like the mini-game / investigation / quiz show via `state`.)
   // ─────────────────────────────────────────────────────────────────
   const STAGE_FNS = {
-    startDay1:                 "1 · Morning",
-    startD1Kitchen:            "2 · Kitchen",
-    startD1PostCook:           "2c · Post-Cook",
-    startD1Lunch:              "3 · Lunch (attic)",
-    startD1Afternoon:          "4 · Afternoon",
-    startD1KitchenInvestigate: "5 · Kitchen Investigate",
-    startD1Dinner:             "6 · Dinner",
-    startD1DinnerOptions:      "7 · Dinner Talk",
-    startD1Night:              "8 · Night",
-    startD1MusicSearch:        "9 · Music Search",
-    startD1NightDining:        "10 · Night Dining",
-    startD1Quiz:               "11 · Day 1 Quiz",
-    startD1NightPostQuiz:      "12 · Post-Quiz",
+    startDay1: "1 · PA-VN-Morning",
+    startD1Kitchen: "2 · PA-VN-Kitchen",
+    startD1PostCook: "2c · Post-Cook",
+    startD1Lunch: "3 · PA-VN-Lunch",
+    startD1Afternoon: "4 · PA-VN-Afternoon",
+    startD1KitchenInvestigate: "5 · PA-INVEST-Kitchen",
+    startD1Dinner: "6 · PA-VN-Dinner",
+    startD1DinnerOptions: "7 · PA-INTERACT-Dinner talk",
+    startD1Night: "8 · PR-VN-Night start",
+    startD1MusicSearch: "9 · PR-FIND-Music Search",
+    startD1NightDining: "10 · PR-VN-pre quiz dia",
+    startD1Quiz: "11 · PR-QUIZ-day1",
+    startD1NightPostQuiz: "12 · PR-VN-post quiz dia",
   };
   Object.entries(STAGE_FNS).forEach(([name, label]) => {
     const orig = window[name];
@@ -282,9 +311,21 @@
   panel.appendChild(body);
 
   // helper: build a section of buttons
-  const makeSection = (label, entries, { accent = false, collapsible = false, closed = false, isScript = false } = {}) => {
+  const makeSection = (
+    label,
+    entries,
+    {
+      accent = false,
+      collapsible = false,
+      closed = false,
+      isScript = false,
+    } = {},
+  ) => {
     const sec = document.createElement("div");
-    sec.className = "dbg-sec" + (collapsible ? " dbg-collapsible" : "") + (closed ? " closed" : "");
+    sec.className =
+      "dbg-sec" +
+      (collapsible ? " dbg-collapsible" : "") +
+      (closed ? " closed" : "");
     const lbl = document.createElement("span");
     lbl.className = "lbl";
     lbl.textContent = label;
@@ -319,7 +360,7 @@
       collapsible: true,
       closed: true,
       isScript: true,
-    })
+    }),
   );
 
   // footer
@@ -327,7 +368,10 @@
   foot.className = "dbg-foot";
   const restart = document.createElement("button");
   restart.textContent = "↺ Restart";
-  restart.addEventListener("click", (e) => { e.stopPropagation(); location.reload(); });
+  restart.addEventListener("click", (e) => {
+    e.stopPropagation();
+    location.reload();
+  });
   foot.appendChild(restart);
   body.appendChild(foot);
 
@@ -336,8 +380,11 @@
   // ── minimize / expand ────────────────────────────────────────────
   const toggle = () => {
     panel.classList.toggle("collapsed");
-    document.getElementById("dbg-min").textContent =
-      panel.classList.contains("collapsed") ? "▸" : "▾";
+    document.getElementById("dbg-min").textContent = panel.classList.contains(
+      "collapsed",
+    )
+      ? "▸"
+      : "▾";
   };
   head.addEventListener("click", toggle);
 
