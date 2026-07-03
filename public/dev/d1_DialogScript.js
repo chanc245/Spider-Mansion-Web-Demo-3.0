@@ -487,6 +487,7 @@ const d1_dinner_characters = [
     script: [
       {
         charName: "Lady Master",
+        charCG: "assets/charImg/char_rosa_normal.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
         text: "Take care of that little girl, since her real mother doesn't seem to care.",
       },
@@ -498,6 +499,7 @@ const d1_dinner_characters = [
     script: [
       {
         charName: " ",
+        charCG: "assets/charImg/char_emme_smile.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
         text: "(She's not interested in you. She's focused on talking to the Master.)",
       },
@@ -509,6 +511,7 @@ const d1_dinner_characters = [
     script: [
       {
         charName: " ",
+        charCG: "assets/charImg/char_lucius_smile.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
         text: "(He's not interested in you; he's focused on talking to the Mistress.)",
       },
@@ -552,6 +555,7 @@ const d1_dinner_characters = [
     script: [
       {
         charName: "Gardener",
+        charCG: "assets/charImg/char_gardener_normal.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
         text: "Brother is right. Even though everyone is ignoring her, we still have to treat her somewhat like royalty.",
       },
@@ -563,11 +567,13 @@ const d1_dinner_characters = [
     script: [
       {
         charName: "Head Maid",
+        charCG: "assets/charImg/char_hmaid_angry.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
         text: "Stop wandering around and stay in your position!",
       },
       {
         charName: "Head Maid",
+        charCG: "assets/charImg/char_hmaid_normal.png",
         text: "(mumbling) And every night, I still cannot understand why everyone needs to be in this dinner place while I could be resting. Instead, we are just watching them eat…",
       },
     ],
@@ -589,8 +595,26 @@ const d1_vnScript_night_pre = [
   {
     charName: " ",
     bg: "assets/bg/bg_BlackOut.png",
-    // Music box starts here and loops through the search + into the dining room.
     soundEffect: "assets/audio/bgm/bg_ara_short.mp3",
+    loopSound: true,
+    text: "..",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    // soundEffect: "assets/audio/bgm/bg_ara_short.mp3",
+    text: ".....",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_BlackOut.png",
+    // soundEffect: "assets/audio/bgm/bg_ara_short.mp3",
+    text: "............",
+  },
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_ug_room1_Nanny.png",
+    // Music box starts here and loops through the search + into the dining room.
     text: "You wake to the sound of a music box playing.",
   },
   {
@@ -603,6 +627,8 @@ const d1_vnScript_night_pre = [
   },
   {
     charName: "You",
+    stopSound: "assets/audio/bgm/bg_ara_short.mp3",
+    fadeSoundMs: 1500,
     text: "I should go check where the sound is coming from.",
   },
   // sketch.js starts PR_MUSIC_SEARCH when this script finishes
