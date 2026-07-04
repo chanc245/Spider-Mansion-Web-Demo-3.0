@@ -178,7 +178,13 @@ function preload() {
   dia_optionMgr.preload();
   // Option screens that run after the VN fades out draw their own bg.
   dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Dining.png"); // dinner talk
-  dia_optionMgr.preloadBg("assets/bg/bg_BlackOut.png");     // music search
+  // Music search — preload every room bg the picker can show, so switching rooms
+  // doesn't flash black while the option manager lazy-loads an uncached image.
+  dia_optionMgr.preloadBg("assets/bg/bg_pr_ug_room1_Nanny.png");   // start (your room)
+  dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Kitchen.png");       // Kitchen
+  dia_optionMgr.preloadBg("assets/bg/bg_pr_3f_Attic.png");         // Attic
+  dia_optionMgr.preloadBg("assets/bg/bg_pr_1f_Dining.png");        // Dining Room
+  dia_optionMgr.preloadBg("assets/bg/bg_pr_1f_PortraitHallway.png"); // Portrait Hallway
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -491,31 +497,45 @@ function startD1Night() {
 // Music search — presented as a DIA_OPTION (spider-web tags), looping until the
 // correct room is chosen. Wrong picks show their result in the VN dialogue box,
 // then re-offer the rooms.
-function startD1MusicSearch() {
-  const SEARCH_BG  = "assets/bg/bg_BlackOut.png";
-  const WRONG_TEXT = "You don't hear any sound here.";
+function startD1MusicSearch(currentBg) {
+  // The search starts in the nanny's room; afterwards the background stays on
+  // whichever room the player last stepped into (passed back as currentBg).
+  const START_BG   = "assets/bg/bg_pr_ug_room1_Nanny.png";
+  const STEP_SFX    = "assets/audio/sfx/dia_step.mp3";
+  const WRONG_TEXT  = "You don't hear any sound here.";
+  const bg = currentBg || START_BG;
+  // NOTE: no night (pr) kitchen art exists, so Kitchen uses the daytime bg.
   const rooms = [
-    { label: "Your Room",   correct: false },
-    { label: "Attic",       correct: false },
-    { label: "Dining Room", correct: true  },
+    { label: "Kitchen",          bg: "assets/bg/bg_pa_1f_Kitchen.png",         correct: false },
+    { label: "Attic",            bg: "assets/bg/bg_pr_3f_Attic.png",           correct: false },
+    { label: "Dining Room",      bg: "assets/bg/bg_pr_1f_Dining.png",          correct: true  },
+    { label: "Portrait Hallway", bg: "assets/bg/bg_pr_1f_PortraitHallway.png", correct: false,
+      wrongText: "You feel like the music is right near by" },
   ];
 
   appState = State.DIA_OPTION;
   dia_optionMgr.onFinish = (_text, idx) => {
-    if (rooms[idx] && rooms[idx].correct) {
+    const room = rooms[idx];
+    if (!room) return;
+    // Footsteps as you walk into the chosen room.
+    audioMgr.play(STEP_SFX, { from: 0 });
+    if (room.correct) {
       // Found the source — continue to the dining-room reveal.
       startD1NightDining();
     } else {
-      // Wrong room: show the result in the dialogue box, then re-offer rooms.
+      // Wrong room: show that room's bg + result, then re-offer the rooms while
+      // keeping the background on the room the player just entered.
       appState = State.DIA_VN;
-      dialog.setScript([{ charName: " ", bg: SEARCH_BG, text: WRONG_TEXT }]);
-      dialog.onFinish = () => startD1MusicSearch();
+      dialog.setScript([
+        { charName: " ", bg: room.bg, text: room.wrongText || WRONG_TEXT },
+      ]);
+      dialog.onFinish = () => startD1MusicSearch(room.bg);
       dialog.start();
     }
   };
   dia_optionMgr.start({
     choices: rooms.map((r) => ({ label: r.label, text: r.label })),
-    bg: SEARCH_BG,
+    bg,
     prompt: "Where is the sound coming from?",
   });
 }
