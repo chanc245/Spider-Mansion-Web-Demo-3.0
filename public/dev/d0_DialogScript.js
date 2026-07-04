@@ -227,7 +227,7 @@ const d0_vnScript_postQuiz_Bad = [
 
 const d0_vnScript = [
   {
-    charName: "???",
+    charName: "Me",
     bg: "assets/bg/bg_pr_ex_MansionFrontDoor.png",
     text: "I checked the address on the old job posting five times… This should be the right place.",
   },
@@ -318,6 +318,7 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "There you are! I’ve been waiting for you.",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_01.mp3",
   },
   {
     charName: " ",
@@ -336,6 +337,7 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Oh, you mean Grandma! But Grandma can’t play with me anymore, so she hired a nanny for me instead!",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_02.mp3",
   },
   {
     charName: " ",
@@ -348,6 +350,7 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "So, will you play with me?",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_03.mp3",
   },
   {
     charName: " ",
@@ -366,6 +369,7 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "People call me Eva!",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_04.mp3",
   },
   {
     charName: "Me",
@@ -378,6 +382,7 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "No way! I’m bored right now. I won’t sleep until you play with me.",
     charCG: "assets/charImg/char_ara_blank.png",
+    diaAudio: "d0_dia_05.mp3",
   },
   {
     charName: " ",
@@ -402,12 +407,14 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Yay! Let’s play a game—Eva loves a puzzle game!",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_06.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Or more specifically… a lateral thinking puzzle game.",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_07.mp3",
   },
   {
     charName: "Me",
@@ -420,28 +427,33 @@ const d0_vnScript = [
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Don’t worry, I’ll teach you how to play it!",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_08.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic.png",
     text: "Come and sit down with me!",
     charCG: "assets/charImg/char_ara_smiling.png",
+    diaAudio: "d0_dia_09.mp3",
   },
   // =====Explaining Lateral Thinking Puzzle=====
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Okay, here’s how it works! I’ll give you a scenario, and your job is to figure out the puzzle by asking me questions!",
+    diaAudio: "d0_dia_10.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Buuut—there’s a catch! I can only answer with YES, NO, or DOESN’T RELATE!",
+    diaAudio: "d0_dia_11.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "…Oh, but since this is your first time, I might give you a little nudge here and there.",
+    diaAudio: "d0_dia_12.mp3",
   },
   {
     charName: "Me",
@@ -457,20 +469,24 @@ const d0_vnScript = [
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Ah! Let’s just start! You’ll get the hang of it while we play!",
+    diaAudio: "d0_dia_13.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "Tonight’s question isssss—",
+    diaAudio: "d0_dia_14.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "I built a house, but the guests didn’t realize it was there and accidentally entered. Afterward, the guests, who were trapped in the house, became my dinner. Who am I?",
+    diaAudio: "d0_dia_15.mp3",
   },
   {
     charName: "Eva",
     bg: "assets/bg/bg_pr_3f_Attic_cg.png",
     text: "That’s the question! You get 20 questions to ask me!",
+    diaAudio: "d0_dia_16.mp3",
   },
 ];
