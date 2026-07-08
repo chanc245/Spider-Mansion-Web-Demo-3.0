@@ -60,6 +60,12 @@ class PA_DinnerManager {
     this._rings = 0;
     this._spokes = 0;
     this._noiseOff = 0;
+
+    // Once the draw-on animation completes, the web is baked into this
+    // full-screen buffer and blitted per frame (~600 stroked segments → one
+    // image call). Allocated lazily, reused across webs/starts.
+    this._webBuf = null;
+    this._webBufValid = false;
   }
 
   // Call during p5 preload. `charList` lets us preload every portrait
@@ -178,7 +184,7 @@ class PA_DinnerManager {
 
   render() {
     if (!this.active) return;
-    const { CHAR_W, CHAR_H, TAG_W, TAG_H, PAD } = PA_DinnerManager;
+    const { TAG_W, TAG_H, PAD } = PA_DinnerManager;
 
     if (this._bgImg) image(this._bgImg, 0, 0, width, height);
 
@@ -199,7 +205,17 @@ class PA_DinnerManager {
       noStroke();
       fill(0, 0, 0, PA_DinnerManager.WEB_DIM_ALPHA * af);
       rect(0, 0, width, height);
-      this._drawWeb(af);
+      if (this._webProgress >= 1) {
+        // Fully spun: blit the baked web instead of re-stroking every segment.
+        if (!this._webBufValid) this._bakeWeb();
+        const ctx = drawingContext;
+        const prevA = ctx.globalAlpha;
+        ctx.globalAlpha = prevA * af;
+        image(this._webBuf, 0, 0);
+        ctx.globalAlpha = prevA;
+      } else {
+        this._drawWeb(af);
+      }
       // Hovered portrait rides on top of the dim + web, fully lit.
       if (top !== -1) this._drawPortrait(this.characters[top]);
     }
@@ -225,20 +241,22 @@ class PA_DinnerManager {
     }
   }
 
+  // Alpha fades go through canvas globalAlpha, NOT p5 tint(): with a tint set,
+  // p5 pushes every image() through an offscreen tint-canvas (even at alpha
+  // 255), which would tax all seven portraits every idle frame.
   _drawPortrait(ch) {
     const { CHAR_W, CHAR_H } = PA_DinnerManager;
+    const ctx = drawingContext;
+    const prevA = ctx.globalAlpha;
     if (ch.img && ch.dimA < 255) {
-      push();
-      tint(255, 255 - ch.dimA);
+      ctx.globalAlpha = prevA * ((255 - ch.dimA) / 255);
       image(ch.img, ch.x, ch.y, CHAR_W, CHAR_H);
-      pop();
     }
     if (ch.imgDim && ch.dimA > 0) {
-      push();
-      tint(255, ch.dimA);
+      ctx.globalAlpha = prevA * (ch.dimA / 255);
       image(ch.imgDim, ch.x, ch.y, CHAR_W, CHAR_H);
-      pop();
     }
+    ctx.globalAlpha = prevA;
   }
 
   // ── web generation / drawing ─────────────────────────────────────
@@ -253,6 +271,7 @@ class PA_DinnerManager {
     this._spokes = floor(random(18, 28));
     this._noiseOff = random(1000);
     this._webProgress = 0;
+    this._webBufValid = false; // new geometry → previous bake is stale
 
     const maxR = max(width, height) * 1.05;
 
@@ -306,8 +325,20 @@ class PA_DinnerManager {
     }
   }
 
-  _drawWeb(af) {
-    noFill();
+  // Render the finished web once into the offscreen buffer; render() then
+  // blits it with globalAlpha until the geometry changes.
+  _bakeWeb() {
+    if (!this._webBuf) this._webBuf = createGraphics(width, height);
+    this._webBuf.clear();
+    this._drawWeb(1, this._webBuf);
+    this._webBufValid = true;
+  }
+
+  // Draw the web at its current progress. `R` is the render target — the
+  // global canvas by default, or a p5.Graphics when baking (both expose the
+  // same drawing API in global mode).
+  _drawWeb(af, R = window) {
+    R.noFill();
     const spokeT = min(1, this._webProgress / 0.35);
     const showSpokes = floor(spokeT * this._spokes);
     const spokeFrac = (spokeT * this._spokes) % 1;
@@ -317,11 +348,11 @@ class PA_DinnerManager {
       const frac = s < showSpokes ? 1 : spokeFrac;
       for (let r = 0; r < this._rings; r++) {
         const t = r / this._rings;
-        stroke(200, 210, 255, lerp(210, 45, t) * af);
-        strokeWeight(lerp(1.4, 0.35, t));
+        R.stroke(200, 210, 255, lerp(210, 45, t) * af);
+        R.strokeWeight(lerp(1.4, 0.35, t));
         const a = this._webPoints[s][r];
         const b = this._webPoints[s][r + 1];
-        line(a.x, a.y, lerp(a.x, b.x, frac), lerp(a.y, b.y, frac));
+        R.line(a.x, a.y, lerp(a.x, b.x, frac), lerp(a.y, b.y, frac));
         if (frac < 1) break;
       }
     }
@@ -350,8 +381,8 @@ class PA_DinnerManager {
         const bx = lerp(a.x, nb.x, sf),
           by = lerp(a.y, nb.y, sf);
 
-        stroke(200, 210, 255, baseA * style.alphaMult * af);
-        strokeWeight(baseW * style.weightMult);
+        R.stroke(200, 210, 255, baseA * style.alphaMult * af);
+        R.strokeWeight(baseW * style.weightMult);
 
         const mx = (a.x + bx) / 2,
           my = (a.y + by) / 2;
@@ -359,23 +390,23 @@ class PA_DinnerManager {
           dy = by - a.y;
         const len = sqrt(dx * dx + dy * dy) || 1;
 
-        beginShape();
-        vertex(a.x, a.y);
-        quadraticVertex(
+        R.beginShape();
+        R.vertex(a.x, a.y);
+        R.quadraticVertex(
           mx + (-dy / len) * len * style.sag * sf,
           my + (dx / len) * len * style.sag * sf,
           bx,
           by,
         );
-        endShape();
+        R.endShape();
       }
     }
 
     // Center dot
-    noStroke();
-    fill(210, 215, 255, 200 * af);
+    R.noStroke();
+    R.fill(210, 215, 255, 200 * af);
     if (this._webPoints[0]?.[0]) {
-      circle(this._webPoints[0][0].x, this._webPoints[0][0].y, 4);
+      R.circle(this._webPoints[0][0].x, this._webPoints[0][0].y, 4);
     }
   }
 
