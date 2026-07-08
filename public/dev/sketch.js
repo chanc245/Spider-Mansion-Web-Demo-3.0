@@ -150,6 +150,11 @@ function preload() {
   // Mini-game assets (kitchen catch game)
   pa_gameMgr.preload();
 
+  // Dinner picker — portraits (normal + dim), bg, and its UI chrome.
+  pa_dinnerMgr.preload(
+    typeof d1_dinner_characters !== "undefined" ? d1_dinner_characters : [],
+  );
+
   // Preload investigation assets (bg + any overlay art per config)
   pa_webInvestigateMgr.preload(D1_KITCHEN_WEB_CONFIG);
   pa_webInvestigateMgr.preload(D1_ATTIC_WEB_CONFIG);
@@ -176,8 +181,6 @@ function preload() {
   logViewDay0Notes.preload();
   dialog.preload();
   dia_optionMgr.preload();
-  // Option screens that run after the VN fades out draw their own bg.
-  dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Dining.png"); // dinner talk
   // Music search — preload every room bg the picker can show, so switching rooms
   // doesn't flash black while the option manager lazy-loads an uncached image.
   dia_optionMgr.preloadBg("assets/bg/bg_pr_ug_room1_Nanny.png");   // start (your room)
@@ -454,37 +457,29 @@ function startD1Dinner() {
   dialog.start();
 }
 
-// Dinner loop — presents talkable characters as DIA_OPTION choices.
-// Loops until "Return to your position" is picked.
+// Dinner loop — image-based picker (PA_DINNER): standing portraits over the
+// dining-room bg. Clicking a portrait plays that character's dialogue and
+// loops back; "return to position" ends the dinner.
 function startD1DinnerOptions() {
   const chars = typeof d1_dinner_characters !== "undefined" ? d1_dinner_characters : [];
 
-  const choices = chars.map((c) => ({
-    label: (c._talked ? "✓ " : "") + c.label,
-    text:  c.label,
-  }));
-  choices.push({ label: "Return to your position", text: "__leave__" });
-
-  appState = State.DIA_OPTION;
-  dia_optionMgr.onFinish = (_text, idx) => {
-    if (idx === chars.length) {
-      // Player leaves dinner
-      appState = State.DIA_VN;
-      dialog.setScript(d1_vnScript_dinner_post);
-      dialog.onFinish = () => startD1Night();
-      dialog.start();
-    } else {
-      // Talk to this character, then loop back
-      chars[idx]._talked = true;
-      appState = State.DIA_VN;
-      dialog.setScript(chars[idx].script);
-      dialog.onFinish = () => startD1DinnerOptions();
-      dialog.start();
-    }
+  appState = State.PA_DINNER;
+  pa_dinnerMgr.onPick = (ch) => {
+    // Talk to this character, then loop back
+    ch._talked = true;
+    appState = State.DIA_VN;
+    dialog.setScript(ch.script);
+    dialog.onFinish = () => startD1DinnerOptions();
+    dialog.start();
   };
-  // bg: the VN has faded out by now, so the option screen paints its own bg.
-  // columns: 2 — only here, lay the (many) character options out in two columns.
-  dia_optionMgr.start({ choices, bg: "assets/bg/bg_pa_1f_Dining.png", columns: 2 });
+  pa_dinnerMgr.onFinish = () => {
+    // Player leaves dinner
+    appState = State.DIA_VN;
+    dialog.setScript(d1_vnScript_dinner_post);
+    dialog.onFinish = () => startD1Night();
+    dialog.start();
+  };
+  pa_dinnerMgr.start({ characters: chars, bg: "assets/bg/bg_pa_1f_Dining.png" });
 }
 
 function startD1Night() {

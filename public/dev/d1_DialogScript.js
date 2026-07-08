@@ -479,47 +479,15 @@ const d1_vnScript_dinner_pre = [
 ];
 
 // Each entry's `script` plays as DIA_VN when that character is chosen.
-// sketch.js loops through this until "Return to position" is picked.
+// sketch.js loops through this until "return to position" is picked.
+// img/imgDim are the standing portraits for the PA_DINNER picker screen;
+// array order = left-to-right seating on that screen.
 const d1_dinner_characters = [
-  {
-    id: "ladyMaster",
-    label: "Lady Master",
-    script: [
-      {
-        charName: "Lady Master",
-        charCG: "assets/charImg/char_rosa_normal.png",
-        bg: "assets/bg/bg_pa_1f_Dining.png",
-        text: "Take care of that little girl, since her real mother doesn't seem to care.",
-      },
-    ],
-  },
-  {
-    id: "mistress",
-    label: "Mistress",
-    script: [
-      {
-        charName: " ",
-        charCG: "assets/charImg/char_emme_smile.png",
-        bg: "assets/bg/bg_pa_1f_Dining.png",
-        text: "(She's not interested in you. She's focused on talking to the Master.)",
-      },
-    ],
-  },
-  {
-    id: "master",
-    label: "Master",
-    script: [
-      {
-        charName: " ",
-        charCG: "assets/charImg/char_lucius_smile.png",
-        bg: "assets/bg/bg_pa_1f_Dining.png",
-        text: "(He's not interested in you; he's focused on talking to the Mistress.)",
-      },
-    ],
-  },
   {
     id: "eva",
     label: "Eva",
+    img: "assets/dinner_char/ui_dinner_eva.png",
+    imgDim: "assets/dinner_char/ui_dinner_eva_dim.png",
     script: [
       {
         charName: "Eva",
@@ -538,8 +506,57 @@ const d1_dinner_characters = [
     ],
   },
   {
+    id: "mistress",
+    label: "Mistress",
+    img: "assets/dinner_char/ui_dinner_emme.png",
+    imgDim: "assets/dinner_char/ui_dinner_emme_dim.png",
+    script: [
+      {
+        charName: " ",
+        charCG: "assets/charImg/char_emme_smile.png",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "(She's not interested in you. She's focused on talking to the Master.)",
+      },
+    ],
+  },
+  {
+    id: "ladyMaster",
+    label: "Lady Master",
+    img: "assets/dinner_char/ui_dinner_rosa.png",
+    imgDim: "assets/dinner_char/ui_dinner_rosa_dim.png",
+    script: [
+      {
+        charName: "Lady Master",
+        charCG: "assets/charImg/char_rosa_normal.png",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "Take care of that little girl, since her real mother doesn't seem to care.",
+      },
+    ],
+  },
+  {
+    id: "headMaid",
+    label: "Head Maid",
+    img: "assets/dinner_char/ui_dinner_hmaid.png",
+    imgDim: "assets/dinner_char/ui_dinner_hmaid_dim.png",
+    script: [
+      {
+        charName: "Head Maid",
+        charCG: "assets/charImg/char_hmaid_angry.png",
+        bg: "assets/bg/bg_pa_1f_Dining.png",
+        text: "Stop wandering around and stay in your position!",
+      },
+      {
+        charName: "Head Maid",
+        charCG: "assets/charImg/char_hmaid_normal.png",
+        text: "(mumbling) And every night, I still cannot understand why everyone needs to be in this dinner place while I could be resting. Instead, we are just watching them eat…",
+      },
+    ],
+  },
+  {
     id: "cook",
     label: "Cook",
+    img: "assets/dinner_char/ui_dinner_cook.png",
+    imgDim: "assets/dinner_char/ui_dinner_cook_dim.png",
     script: [
       {
         charName: "Cook",
@@ -552,6 +569,8 @@ const d1_dinner_characters = [
   {
     id: "gardener",
     label: "Gardener",
+    img: "assets/dinner_char/ui_dinner_gardener.png",
+    imgDim: "assets/dinner_char/ui_dinner_gardener_dim.png",
     script: [
       {
         charName: "Gardener",
@@ -562,19 +581,16 @@ const d1_dinner_characters = [
     ],
   },
   {
-    id: "headMaid",
-    label: "Head Maid",
+    id: "master",
+    label: "Master",
+    img: "assets/dinner_char/ui_dinner_lucius.png",
+    imgDim: "assets/dinner_char/ui_dinner_lucius_dim.png",
     script: [
       {
-        charName: "Head Maid",
-        charCG: "assets/charImg/char_hmaid_angry.png",
+        charName: " ",
+        charCG: "assets/charImg/char_lucius_smile.png",
         bg: "assets/bg/bg_pa_1f_Dining.png",
-        text: "Stop wandering around and stay in your position!",
-      },
-      {
-        charName: "Head Maid",
-        charCG: "assets/charImg/char_hmaid_normal.png",
-        text: "(mumbling) And every night, I still cannot understand why everyone needs to be in this dinner place while I could be resting. Instead, we are just watching them eat…",
+        text: "(He's not interested in you; he's focused on talking to the Mistress.)",
       },
     ],
   },
