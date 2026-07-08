@@ -165,7 +165,7 @@ class PA_DinnerManager {
         this._webHover = this._hover;
         const ch = this.characters[this._hover];
         this._generateWeb(
-          ch.x + PA_DinnerManager.CHAR_W / 2 + 10,
+          ch.x + PA_DinnerManager.CHAR_W * (2 / 3),
           ch.y + PA_DinnerManager.CHAR_H * 0.32,
         );
       }
