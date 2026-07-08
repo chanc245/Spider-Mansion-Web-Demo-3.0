@@ -2,9 +2,13 @@
 // Image-based dinner picker — replaces the old text-list version.
 //
 // Seven standing portraits (assets/dinner_char/ui_dinner_*.png, drawn 115x380)
-// over the dining-room bg. Hovering one portrait keeps it lit and swaps every
-// OTHER portrait to its *_dim.png variant. Clicking a portrait fires
-// onPick(char); the "return to position" row at the bottom fires onFinish.
+// over the dining-room bg. Hovering one portrait triggers "web vision":
+// the whole screen dims, a full-screen spider web (ported from
+// PA_WebInvestigateManager) animates out from the hovered character, and every
+// OTHER portrait crossfades to its *_dim.png variant. The hovered portrait is
+// drawn on top of the dim + web layers, so the web never overlaps it.
+// Clicking a portrait fires onPick(char); the "return to position" row at the
+// bottom fires onFinish.
 //
 // Config example (characters come from d1_dinner_characters):
 //   pa_dinnerMgr.start({
@@ -30,9 +34,15 @@ class PA_DinnerManager {
   // Hover dim swap crossfades (fast) instead of hard-switching.
   static DIM_FADE_MS = 120;
 
+  // Web vision on hover — full-screen dim + animated radial web
+  // (constants mirror PA_WebInvestigateManager).
+  static WEB_DIM_ALPHA = 140; // full-screen dim strength at full hover
+  static WEB_ANIM_SPEED = 0.05; // web draw-on progress per frame
+  static WEB_FADE_MS = 160; // dim+web fade in/out
+
   constructor() {
     this.active = false;
-    this.characters = []; // { ref, img, imgDim, x, y }
+    this.characters = []; // { ref, img, imgDim, x, y, dimA }
     this.onPick = null;   // (characterRef) => {} — portrait clicked
     this.onFinish = null; // () => {} — "return to position" clicked
     this._hover = -1;     // hovered portrait index, -1 = none
@@ -40,6 +50,16 @@ class PA_DinnerManager {
     this._returnRow = null; // { x, y, w, h, tw } computed in start()
     this._imgCache = {};
     this._bgImg = null;
+
+    // Web-vision state
+    this._webA = 0;        // dim+web master alpha 0..255
+    this._webHover = -1;   // portrait the current web belongs to
+    this._webProgress = 0; // 0..1 draw-on animation
+    this._webPoints = [];
+    this._segStyles = [];
+    this._rings = 0;
+    this._spokes = 0;
+    this._noiseOff = 0;
   }
 
   // Call during p5 preload. `charList` lets us preload every portrait
@@ -63,7 +83,7 @@ class PA_DinnerManager {
   }
 
   start(opts = {}) {
-    const { CHAR_W, CHAR_H, CHAR_GAP, CHAR_Y, TAG_W, TAG_H, PAD, ROW_Y } =
+    const { CHAR_W, CHAR_GAP, CHAR_Y, TAG_W, TAG_H, PAD, ROW_Y } =
       PA_DinnerManager;
 
     this._bgImg = this._img(opts.bg ?? "assets/bg/bg_pa_1f_Dining.png");
@@ -91,6 +111,8 @@ class PA_DinnerManager {
 
     this._hover = -1;
     this._hoverReturn = false;
+    this._webA = 0;
+    this._webHover = -1;
     this.active = true;
   }
 
@@ -134,6 +156,24 @@ class PA_DinnerManager {
       const dimmed = this._hover !== -1 && this._hover !== i;
       ch.dimA = constrain(ch.dimA + (dimmed ? step : -step), 0, 255);
     }
+
+    // Web vision: fade the full-screen dim + web with hover, animate the web
+    // drawing on. A new web is spun when hover lands on a (new) portrait.
+    const webStep = (deltaTime / PA_DinnerManager.WEB_FADE_MS) * 255;
+    if (this._hover !== -1) {
+      if (this._webHover !== this._hover || this._webA <= 0) {
+        this._webHover = this._hover;
+        const ch = this.characters[this._hover];
+        this._generateWeb(
+          ch.x + PA_DinnerManager.CHAR_W / 2 + 10,
+          ch.y + PA_DinnerManager.CHAR_H * 0.32,
+        );
+      }
+      this._webA = constrain(this._webA + webStep, 0, 255);
+      this._webProgress = min(1, this._webProgress + PA_DinnerManager.WEB_ANIM_SPEED);
+    } else {
+      this._webA = constrain(this._webA - webStep, 0, 255);
+    }
   }
 
   render() {
@@ -142,23 +182,26 @@ class PA_DinnerManager {
 
     if (this._bgImg) image(this._bgImg, 0, 0, width, height);
 
-    // Portraits — while one is hovered, all the OTHERS fade to their dim art.
+    // Portraits under the web layer — the hovered one (web owner) is skipped
+    // here and drawn after the dim + web so nothing overlaps it.
     // True crossfade: normal fades OUT as dim fades in. The two exports are
     // different drawings, so at rest exactly one of them may be visible —
     // layering dim over an always-opaque normal would show both ghosted.
-    for (const ch of this.characters) {
-      if (ch.img && ch.dimA < 255) {
-        push();
-        tint(255, 255 - ch.dimA);
-        image(ch.img, ch.x, ch.y, CHAR_W, CHAR_H);
-        pop();
-      }
-      if (ch.imgDim && ch.dimA > 0) {
-        push();
-        tint(255, ch.dimA);
-        image(ch.imgDim, ch.x, ch.y, CHAR_W, CHAR_H);
-        pop();
-      }
+    const top = this._webA > 0 ? this._webHover : -1;
+    for (let i = 0; i < this.characters.length; i++) {
+      if (i === top) continue;
+      this._drawPortrait(this.characters[i]);
+    }
+
+    // Full-screen dim + spider web (web vision), fading with hover.
+    if (this._webA > 0) {
+      const af = this._webA / 255;
+      noStroke();
+      fill(0, 0, 0, PA_DinnerManager.WEB_DIM_ALPHA * af);
+      rect(0, 0, width, height);
+      this._drawWeb(af);
+      // Hovered portrait rides on top of the dim + web, fully lit.
+      if (top !== -1) this._drawPortrait(this.characters[top]);
     }
 
     // Decorative web frame (includes the edge/bottom vignette) on top of the
@@ -179,6 +222,160 @@ class PA_DinnerManager {
       textAlign(LEFT, CENTER);
       text(PA_DinnerManager.RETURN_LABEL, r.x + TAG_W + PAD, r.y + TAG_H / 2);
       pop();
+    }
+  }
+
+  _drawPortrait(ch) {
+    const { CHAR_W, CHAR_H } = PA_DinnerManager;
+    if (ch.img && ch.dimA < 255) {
+      push();
+      tint(255, 255 - ch.dimA);
+      image(ch.img, ch.x, ch.y, CHAR_W, CHAR_H);
+      pop();
+    }
+    if (ch.imgDim && ch.dimA > 0) {
+      push();
+      tint(255, ch.dimA);
+      image(ch.imgDim, ch.x, ch.y, CHAR_W, CHAR_H);
+      pop();
+    }
+  }
+
+  // ── web generation / drawing ─────────────────────────────────────
+  // Ported from PA_WebInvestigateManager (_generateWeb/_drawWeb), minus the
+  // object-rect deformation; `af` scales all strand alphas for fade in/out.
+  _generateWeb(cx, cy) {
+    this._webPoints = [];
+    this._segStyles = [];
+    // Denser and wider than the investigate web — more rings/spokes, and the
+    // strands reach further out so the web covers the whole scene.
+    this._rings = floor(random(14, 22));
+    this._spokes = floor(random(18, 28));
+    this._noiseOff = random(1000);
+    this._webProgress = 0;
+
+    const maxR = max(width, height) * 1.05;
+
+    let angles = [],
+      running = 0;
+    for (let s = 0; s < this._spokes; s++) {
+      running += (TWO_PI / this._spokes) * random(0.55, 1.6);
+      angles.push(running);
+    }
+    const norm = TWO_PI / running;
+    angles = angles.map((a) => a * norm);
+
+    for (let s = 0; s < this._spokes; s++) {
+      const col = [],
+        lenMult = random(0.7, 1.15);
+      for (let r = 0; r <= this._rings; r++) {
+        const t = r / this._rings;
+        const radWobble = map(
+          noise(this._noiseOff + s * 0.7, r * 0.5),
+          0,
+          1,
+          0.75,
+          1.28,
+        );
+        const rad = t * maxR * lenMult * radWobble;
+        const latDrift =
+          map(
+            noise(this._noiseOff + s * 1.3, r * 0.9 + 99),
+            0,
+            1,
+            -0.12,
+            0.12,
+          ) * t;
+        col.push({
+          x: cx + cos(angles[s] + latDrift) * rad,
+          y: cy + sin(angles[s] + latDrift) * rad,
+        });
+      }
+      this._webPoints.push(col);
+    }
+
+    for (let r = 1; r <= this._rings; r++) {
+      const row = [];
+      for (let s = 0; s < this._spokes; s++)
+        row.push({
+          alphaMult: random(0.75, 1.1),
+          weightMult: random(0.6, 1.4),
+          sag: random(0.04, 0.14),
+        });
+      this._segStyles.push(row);
+    }
+  }
+
+  _drawWeb(af) {
+    noFill();
+    const spokeT = min(1, this._webProgress / 0.35);
+    const showSpokes = floor(spokeT * this._spokes);
+    const spokeFrac = (spokeT * this._spokes) % 1;
+
+    for (let s = 0; s < showSpokes + 1; s++) {
+      if (s >= this._spokes) break;
+      const frac = s < showSpokes ? 1 : spokeFrac;
+      for (let r = 0; r < this._rings; r++) {
+        const t = r / this._rings;
+        stroke(200, 210, 255, lerp(210, 45, t) * af);
+        strokeWeight(lerp(1.4, 0.35, t));
+        const a = this._webPoints[s][r];
+        const b = this._webPoints[s][r + 1];
+        line(a.x, a.y, lerp(a.x, b.x, frac), lerp(a.y, b.y, frac));
+        if (frac < 1) break;
+      }
+    }
+
+    const ringT =
+      this._webProgress > 0.35 ? min(1, (this._webProgress - 0.35) / 0.65) : 0;
+    const showRings = floor(ringT * this._rings);
+    const ringFrac = (ringT * this._rings) % 1;
+
+    for (let r = 1; r <= showRings + 1; r++) {
+      if (r > this._rings) break;
+      const frac = r <= showRings ? 1 : ringFrac;
+      const t = r / this._rings;
+      const baseA = lerp(185, 35, t);
+      const baseW = lerp(1.0, 0.3, t);
+      const segsShow = floor(frac * this._spokes);
+      const segFrac = (frac * this._spokes) % 1;
+
+      for (let s = 0; s < segsShow + 1; s++) {
+        if (s >= this._spokes) break;
+        const sf = s < segsShow ? 1 : segFrac;
+        const next = (s + 1) % this._spokes;
+        const style = this._segStyles[r - 1][s];
+        const a = this._webPoints[s][r];
+        const nb = this._webPoints[next][r];
+        const bx = lerp(a.x, nb.x, sf),
+          by = lerp(a.y, nb.y, sf);
+
+        stroke(200, 210, 255, baseA * style.alphaMult * af);
+        strokeWeight(baseW * style.weightMult);
+
+        const mx = (a.x + bx) / 2,
+          my = (a.y + by) / 2;
+        const dx = bx - a.x,
+          dy = by - a.y;
+        const len = sqrt(dx * dx + dy * dy) || 1;
+
+        beginShape();
+        vertex(a.x, a.y);
+        quadraticVertex(
+          mx + (-dy / len) * len * style.sag * sf,
+          my + (dx / len) * len * style.sag * sf,
+          bx,
+          by,
+        );
+        endShape();
+      }
+    }
+
+    // Center dot
+    noStroke();
+    fill(210, 215, 255, 200 * af);
+    if (this._webPoints[0]?.[0]) {
+      circle(this._webPoints[0][0].x, this._webPoints[0][0].y, 4);
     }
   }
 
