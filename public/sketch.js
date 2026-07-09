@@ -659,6 +659,22 @@ function mousePressed(event) {
   }
 
   if (appState === State.TITLE) {
+    // AI gate: on the first click, ask which AI runs the quiz (and collect
+    // the key/token) before the story starts. Skipped once chosen this
+    // session.
+    if (window.AIGateOverlay) {
+      // While the gate is on screen (including its brief "ready" linger after
+      // the choice is saved), clicks belong to the overlay — otherwise a click
+      // in that window would start the dialog a second time via onDone.
+      if (AIGateOverlay.open()) return;
+      if (!AIGateOverlay.done()) {
+        AIGateOverlay.show(() => {
+          appState = State.DIA_VN;
+          dialog.start();
+        });
+        return;
+      }
+    }
     appState = State.DIA_VN;
     dialog.start();
     return;

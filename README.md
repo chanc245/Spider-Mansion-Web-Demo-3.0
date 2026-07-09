@@ -98,7 +98,7 @@ Ways to switch provider (any of these):
 
 - **`.env`**: `AI_PROVIDER=openai`, `local`, or `hf` — the default at server
   start.
-- **AI gate**: the in-game chooser shown after the title click (dev version) —
+- **AI gate**: the in-game chooser shown after the title click —
   players pick ChatGPT (own key), Hugging Face (own free token), or Local.
 - **Debug panel**: open with `?debug` (asks for the debug password —
   `DEBUG_PASSWORD` in `.env`; unset disables it); the "AI provider" section on

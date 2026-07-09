@@ -1,4 +1,4 @@
-// AIGateOverlay.js (dev overlay)
+// classes/AIGateOverlay.js
 // Provider/key chooser shown after the title "click anywhere" and before the
 // game starts: pick ChatGPT (fast, bring your own OpenAI key — or the game's
 // built-in key when the server has one) or a local Ollama model (free, slower).

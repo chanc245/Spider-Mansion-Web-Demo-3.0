@@ -2,16 +2,6 @@
 let audioMgr;
 let quiz, logView, dialog;
 
-// AI gate (dev-only): provider/API-key chooser shown after the title click.
-// Loaded dynamically because the shared index.html doesn't know about
-// dev-overlay-only scripts; under /dev this resolves to dev/classes/.
-{
-  const s = document.createElement("script");
-  s.src = "classes/AIGateOverlay.js";
-  s.async = false;
-  document.head.appendChild(s);
-}
-
 // ── Day 1 quiz instances ─────────────────────────────────────────
 let quiz1, logView1;
 // Read-only viewer for the saved Day 0 Q&A, shown on the "day0 notes" tab.
