@@ -7,8 +7,57 @@
 // section at the bottom.)
 // Remove or ignore this file in production.
 
-(function () {
+(async function () {
   if (!new URLSearchParams(location.search).has("debug")) return;
+
+  // ── password gate ────────────────────────────────────────────────
+  // The panel drives server-wide switches (POST /ai-provider), so it only
+  // opens with the debug password (DEBUG_PASSWORD in .env — never in the
+  // code). Verified SERVER-SIDE via /debug-auth and remembered for this tab;
+  // the panel itself can't tell right from wrong, so it can't be fooled.
+  const checkPw = async (password) => {
+    try {
+      const r = await fetch("/debug-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!r.ok) return "unavailable"; // old server without the route
+      const j = await r.json();
+      return j.disabled ? "disabled" : j.ok ? "ok" : "bad";
+    } catch {
+      return "unavailable";
+    }
+  };
+
+  let dbgPw = sessionStorage.getItem("dbgPw") || "";
+  let verdict = dbgPw ? await checkPw(dbgPw) : "bad";
+  for (let tries = 0; verdict === "bad" && tries < 3; tries++) {
+    const entered = window.prompt(
+      tries === 0 ? "debug panel password:" : "Wrong password — try again:",
+    );
+    if (entered === null) return; // cancelled — no panel
+    dbgPw = entered;
+    verdict = await checkPw(dbgPw);
+  }
+  if (verdict === "unavailable") {
+    alert(
+      "Debug panel: the server doesn't answer /debug-auth — it's probably an " +
+        "old process. Restart the server (npm start) and hard-refresh.",
+    );
+    return;
+  }
+  if (verdict === "disabled") {
+    alert(
+      "Debug panel is disabled — set DEBUG_PASSWORD in .env and restart the server.",
+    );
+    return;
+  }
+  if (verdict !== "ok") {
+    alert("Debug panel: wrong password.");
+    return;
+  }
+  sessionStorage.setItem("dbgPw", dbgPw);
 
   // ── safe call: warn instead of throwing if a global isn't loaded yet ──
   const call = (label, fn) => {
@@ -188,7 +237,6 @@
   style.textContent = `
     #dbg {
       position: fixed;
-      right: 12px;
       bottom: 12px;
       z-index: 99999;
       font-family: ui-monospace, monospace;
@@ -276,9 +324,30 @@
     }
     .dbg-foot button { flex: 1; }
     .dbg-collapsible > .lbl { cursor: pointer; }
-    .dbg-collapsible.closed .dbg-grid { display: none; }
+    .dbg-collapsible.closed .dbg-grid,
+    .dbg-collapsible.closed #dbg-ai-model { display: none; }
     .dbg-collapsible > .lbl::before { content: "▾ "; color: #555; }
     .dbg-collapsible.closed > .lbl::before { content: "▸ "; }
+    #dbg.side-left { left: 12px; }
+    #dbg.side-right { right: 12px; }
+    #dbg-side {
+      margin-top: 6px;
+      width: 100%;
+    }
+    #dbg button.active {
+      background: #2e4a2e;
+      border-color: #6fae6f;
+      color: #b9f0b9;
+    }
+    #dbg-ai-model {
+      display: block;
+      margin-top: 5px;
+      font-size: 10px;
+      color: #7a7a88;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   `;
   document.head.appendChild(style);
 
@@ -287,8 +356,13 @@
   // ─────────────────────────────────────────────────────────────────
   const panel = document.createElement("div");
   panel.id = "dbg";
-  // Start collapsed (shrunk) — click the header to expand.
-  panel.classList.add("collapsed");
+  // Start expanded — the panel only exists when ?debug is in the URL, so
+  // being here means you want it. Click the header to shrink it.
+  // Which screen edge the panel docks to — persisted across reloads; the
+  // "⇄ dock" button at the very bottom flips it.
+  panel.classList.add(
+    localStorage.getItem("dbgSide") === "right" ? "side-right" : "side-left",
+  );
 
   // header
   const head = document.createElement("div");
@@ -296,7 +370,7 @@
   head.innerHTML = `
     <span class="title">🐞 DEBUG</span>
     <span id="dbg-state">–</span>
-    <span id="dbg-min">▸</span>
+    <span id="dbg-min">▾</span>
   `;
   panel.appendChild(head);
 
@@ -353,8 +427,99 @@
     return sec;
   };
 
-  body.appendChild(makeSection("Day 1 flow", day1Flow, { accent: true }));
-  body.appendChild(makeSection("Day 0 flow", day0Flow));
+  // ── AI provider toggle (ChatGPT / Hugging Face / local Ollama) ────
+  // First section, collapsible via its label. Server-wide switch via
+  // POST /ai-provider; the active button is green.
+  {
+    const sec = document.createElement("div");
+    sec.className = "dbg-sec dbg-collapsible";
+    const lbl = document.createElement("span");
+    lbl.className = "lbl";
+    lbl.textContent = "AI provider";
+    lbl.addEventListener("click", () => sec.classList.toggle("closed"));
+    sec.appendChild(lbl);
+
+    const grid = document.createElement("div");
+    grid.className = "dbg-grid";
+    const modelEl = document.createElement("span");
+    modelEl.id = "dbg-ai-model";
+    modelEl.textContent = "model: –";
+
+    const btns = {};
+    // Only the /dev overlay's EvaAI reads the sessionStorage override; the
+    // root game always follows the server default. Outside /dev these buttons
+    // are purely the server-wide switch, and "(this tab)" never shows.
+    const devOverlay = location.pathname.startsWith("/dev");
+    // What THIS tab actually uses: the gate/panel choice beats the server
+    // default. The model line names the winner and where it came from.
+    const render = (info) => {
+      const gateAi = devOverlay ? sessionStorage.getItem("smAiProvider") : null;
+      const effective = gateAi || info.provider;
+      Object.entries(btns).forEach(([key, b]) =>
+        b.classList.toggle("active", key === effective),
+      );
+      const model = info.providers?.[effective]?.model ?? info.model;
+      modelEl.textContent = `model: ${model}${gateAi ? " (this tab)" : ""}`;
+      modelEl.title = modelEl.textContent; // full text on hover if truncated
+    };
+
+    [
+      ["openai", "☁ GPT"],
+      ["hf", "🤗 HF"],
+      ["local", "💻 Local"],
+    ].forEach(([key, text]) => {
+      const b = document.createElement("button");
+      b.textContent = text;
+      b.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        try {
+          const res = await fetch("/ai-provider", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider: key,
+              password: sessionStorage.getItem("dbgPw") || "",
+            }),
+          });
+          // Under /dev, make the click authoritative for this tab too:
+          // override any gate choice (and drop its player key — server env
+          // keys apply instead).
+          if (devOverlay) {
+            sessionStorage.setItem("smAiProvider", key);
+            sessionStorage.removeItem("smAiKey");
+          }
+          render(await res.json());
+        } catch (err) {
+          console.warn("[debug] provider switch failed:", err.message);
+        }
+      });
+      btns[key] = b;
+      grid.appendChild(b);
+    });
+
+    sec.appendChild(grid);
+    sec.appendChild(modelEl);
+    body.appendChild(sec);
+
+    fetch("/ai-provider")
+      .then((r) => r.json())
+      .then(render)
+      .catch(() => (modelEl.textContent = "model: (server offline?)"));
+  }
+
+  // Day 1 split into its two halves — PA (day part) and PR (night part) —
+  // each its own collapsible group; Day 0 starts collapsed.
+  const day1PA = day1Flow.filter(([label]) => label.includes("PA-"));
+  const day1PR = day1Flow.filter(([label]) => label.includes("PR-"));
+  body.appendChild(
+    makeSection("Day 1 · PA (day)", day1PA, { accent: true, collapsible: true }),
+  );
+  body.appendChild(
+    makeSection("Day 1 · PR (night)", day1PR, { accent: true, collapsible: true }),
+  );
+  body.appendChild(
+    makeSection("Day 0 flow", day0Flow, { collapsible: true, closed: true }),
+  );
   body.appendChild(
     makeSection("Isolated scripts (no chaining)", isolatedScripts, {
       collapsible: true,
@@ -374,6 +539,26 @@
   });
   foot.appendChild(restart);
   body.appendChild(foot);
+
+  // Dock-side toggle — very bottom of the panel, persisted in localStorage.
+  const sideBtn = document.createElement("button");
+  sideBtn.id = "dbg-side";
+  const sideLabel = () =>
+    (sideBtn.textContent = panel.classList.contains("side-left")
+      ? "⇄ dock right"
+      : "⇄ dock left");
+  sideLabel();
+  sideBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    panel.classList.toggle("side-left");
+    panel.classList.toggle("side-right");
+    localStorage.setItem(
+      "dbgSide",
+      panel.classList.contains("side-right") ? "right" : "left",
+    );
+    sideLabel();
+  });
+  body.appendChild(sideBtn);
 
   document.body.appendChild(panel);
 
