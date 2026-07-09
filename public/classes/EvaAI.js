@@ -1,8 +1,9 @@
-// classes/Day0Eva.js
+// classes/EvaAI.js
 // ---------------------------------------------------------------------------
 // EvaAI — generic lateral-thinking puzzle AI.
 // All per-day content lives in EVA_CONFIGS below.
-// To add Day 1: add a new entry to EVA_CONFIGS and pass it to Day1QuizLog.
+// To add a day: add an entry to EVA_CONFIGS and pass its key to QuizLog,
+// e.g. new QuizLog("day1") — QuizLog forwards the key to EvaAI.
 // ---------------------------------------------------------------------------
 
 const EVA_CONFIGS = {
@@ -267,25 +268,44 @@ ${userInput}
   }
 
   async ask(userInput) {
+    // Build the prompt BEFORE recording the question: "Previous Q/A" must hold
+    // only completed turns (the current input appears solely under CURRENT
+    // PLAYER INPUT), and "Questions remaining" must not count the in-flight one.
+    // The day1 win rules depend on this — the model checks Previous Q/A to see
+    // whether the other puzzle part was already landed on an earlier turn.
+    const prompt = this._prompt(userInput);
     const idx = this.history.push({ q: userInput, a: null }) - 1;
 
-    const res = await fetch("/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: this._prompt(userInput) }),
-    });
+    // Provider: the AI-gate choice saved in sessionStorage (player picked at
+    // start, possibly with their own OpenAI key / HF token — sent per request,
+    // never stored server-side). Without a choice, the server default decides.
+    const provider = sessionStorage.getItem("smAiProvider") || undefined;
+    const apiKey =
+      provider === "openai" || provider === "hf"
+        ? sessionStorage.getItem("smAiKey") || undefined
+        : undefined;
 
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      const errMsg = `Submit failed: ${res.status} ${txt}`;
-      this.history[idx].a = `(error) ${errMsg}`;
-      throw new Error(errMsg);
+    try {
+      const res = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: prompt, provider, apiKey }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`Submit failed: ${res.status} ${txt}`);
+      }
+      const json = await res.json();
+      const reply = (json.ai ?? "(no ai field)").toString();
+      this.history[idx].a = reply;
+      return reply;
+    } catch (err) {
+      // The player got no answer (HTTP error OR network failure) — drop the
+      // entry so the failed attempt doesn't eat one of their limited
+      // questions or linger as a "(pending)" ghost in future prompts.
+      this.history.splice(idx, 1);
+      throw err;
     }
-
-    const json = await res.json();
-    const reply = (json.ai ?? "(no ai field)").toString();
-    this.history[idx].a = reply;
-    return reply;
   }
 }
 

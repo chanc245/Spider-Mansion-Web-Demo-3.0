@@ -37,7 +37,8 @@ Who knows? You might _just_ survive...
 
 - **Front-end:** [p5.js](https://p5js.org/) (canvas game, served as static files)
 - **Server:** [Express](https://expressjs.com/) (static hosting + two API endpoints)
-- **AI quiz:** [OpenAI](https://platform.openai.com/) via the `/submit` endpoint
+- **AI quiz:** [OpenAI](https://platform.openai.com/) or a local
+  [Ollama](https://ollama.com/) model via the `/submit` endpoint
 - **Voice:** [ElevenLabs](https://elevenlabs.io/) text-to-speech via the `/tts` endpoint
 - **Runtime:** Node.js 18+ (developed on Node 22)
 
@@ -61,14 +62,59 @@ Then open **http://localhost:3001** in your browser.
 
 ### Environment variables
 
-| Variable               | Required | Default     | Purpose                                  |
-| ---------------------- | -------- | ----------- | ---------------------------------------- |
-| `OPENAI_API_KEY`       | Yes\*    | —           | AI quiz conversation (`/submit`)         |
-| `ELEVEN_LABS_API_KEY`  | No       | —           | Eva's spoken voice / TTS (`/tts`)        |
-| `OPENAI_MODEL`         | No       | `gpt-4.1`   | Chat model used for the quiz AI          |
-| `PORT`                 | No       | `3001`      | Port the server listens on               |
+| Variable               | Required | Default                     | Purpose                                  |
+| ---------------------- | -------- | --------------------------- | ---------------------------------------- |
+| `OPENAI_API_KEY`       | Yes\*    | —                           | AI quiz conversation (`/submit`)         |
+| `ELEVEN_LABS_API_KEY`  | No       | —                           | Eva's spoken voice / TTS (`/tts`)        |
+| `OPENAI_MODEL`         | No       | `gpt-4.1`                   | Chat model used for the quiz AI          |
+| `AI_PROVIDER`          | No       | `openai`                    | `openai` (ChatGPT), `local` (Ollama), or `hf` (Hugging Face) |
+| `OLLAMA_MODEL`         | No       | `qwen3:8b`                  | Ollama model used when provider is local |
+| `OLLAMA_BASE_URL`      | No       | `http://localhost:11434/v1` | Ollama server address                    |
+| `HF_MODEL`             | No       | `Qwen/Qwen3-8B`             | Model used with the `hf` provider        |
+| `HF_API_KEY`           | No       | —                           | Optional built-in Hugging Face token (players can bring their own) |
+| `DEBUG_PASSWORD`       | No       | — (unset = disabled)        | Password for the `?debug` panel / provider switch |
+| `PORT`                 | No       | `3001`                      | Port the server listens on               |
 
-\*Required for the puzzle to function; the rest of the game still loads without it.
+\*Required for the puzzle to function **unless you use a local model** (below);
+the rest of the game still loads without it.
+
+### Running the quiz AI locally (no API credit needed)
+
+The quiz can run on a free local model through [Ollama](https://ollama.com/)
+instead of the OpenAI API — no key, no credit, works offline:
+
+```bash
+# 1. Install Ollama (macOS: brew install ollama), then get a model
+ollama pull qwen3:8b        # recommended, ~5 GB — needs ~16 GB RAM
+ollama pull llama3.2        # fallback for low-spec machines, ~2 GB
+                            # (fast, but judges the puzzle noticeably worse)
+
+# 2. Tell the server to use it (in .env)
+AI_PROVIDER=local
+OLLAMA_MODEL=qwen3:8b
+```
+
+Ways to switch provider (any of these):
+
+- **`.env`**: `AI_PROVIDER=openai`, `local`, or `hf` — the default at server
+  start.
+- **AI gate**: the in-game chooser shown after the title click (dev version) —
+  players pick ChatGPT (own key), Hugging Face (own free token), or Local.
+- **Debug panel**: open with `?debug` (asks for the debug password —
+  `DEBUG_PASSWORD` in `.env`; unset disables it); the "AI provider" section on
+  top has GPT / HF / Local buttons and shows the active model (switches
+  server-wide, live).
+
+Notes:
+
+- Local models tend to answer slower than the API, and small ones judge the
+  lateral-thinking puzzles less reliably — `qwen3:8b` is the sweet spot in our
+  testing; reasoning models (e.g. `deepseek-r1:14b`) also work well but take
+  ~20 s per answer (their `<think>` output is stripped server-side).
+- The server sends open-weight models (both local Ollama and Hugging Face) an
+  extra rule checklist and a lower temperature (see `OPEN_MODEL_DECISION_STEPS`
+  in `index.js`) — small models need it to answer "doesn't relate." correctly
+  instead of "no.".
 
 ### How to play
 

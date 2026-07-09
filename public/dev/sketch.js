@@ -2,6 +2,16 @@
 let audioMgr;
 let quiz, logView, dialog;
 
+// AI gate (dev-only): provider/API-key chooser shown after the title click.
+// Loaded dynamically because the shared index.html doesn't know about
+// dev-overlay-only scripts; under /dev this resolves to dev/classes/.
+{
+  const s = document.createElement("script");
+  s.src = "classes/AIGateOverlay.js";
+  s.async = false;
+  document.head.appendChild(s);
+}
+
 // ── Day 1 quiz instances ─────────────────────────────────────────
 let quiz1, logView1;
 // Read-only viewer for the saved Day 0 Q&A, shown on the "day0 notes" tab.
@@ -678,6 +688,22 @@ function mousePressed(event) {
   }
 
   if (appState === State.TITLE) {
+    // AI gate: on the first click, ask which AI runs the quiz (and collect
+    // the key/token) before the story starts. Skipped once chosen this
+    // session.
+    if (window.AIGateOverlay) {
+      // While the gate is on screen (including its brief "ready" linger after
+      // the choice is saved), clicks belong to the overlay — otherwise a click
+      // in that window would start the dialog a second time via onDone.
+      if (AIGateOverlay.open()) return;
+      if (!AIGateOverlay.done()) {
+        AIGateOverlay.show(() => {
+          appState = State.DIA_VN;
+          dialog.start();
+        });
+        return;
+      }
+    }
     appState = State.DIA_VN;
     dialog.start();
     return;
