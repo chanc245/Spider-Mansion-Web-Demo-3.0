@@ -161,6 +161,10 @@ class QuizLog {
         console.log(`[AI OUTPUT] Eva: ${reply}`);
         this.notebookContent[idx] =
           `${this.eva.icon}${this.eva.prefix}: ${reply}`;
+        // Usage tally (e.g. "Q3/Q20") so the player always sees how many
+        // questions they've spent. Failed asks are refunded and never get
+        // here, so the tally only counts questions Eva actually answered.
+        this.notebookContent.push(`Q${this.questionCount}/Q${this.inputLimit}`);
         this.notebookContent.push("***");
         // For ending replies (correct/exhausted), _afterAIReply awaits the voice itself.
         // For normal replies, fire-and-forget so the game doesn't block.
@@ -169,9 +173,14 @@ class QuizLog {
           .catch(() => {});
         if (!this._ending) this._playEvaVoice(reply);
       } catch (err) {
+        // EvaAI refunds a failed ask from its history — roll our counter back
+        // too, so the failed attempt doesn't eat one of the limited questions
+        // (the next question reuses the same Q number).
+        this.questionCount--;
         this.notebookContent[idx] = `${this.eva.icon}${
           this.eva.prefix
-        }: (error) ${err.message || err}`;
+        }: (error) ${err.message || err} — not counted, ask again.`;
+        this.input.attribute("placeholder", this._placeholderText());
       } finally {
         this._invalidateWrap();
         this.waitingForAI = false;
