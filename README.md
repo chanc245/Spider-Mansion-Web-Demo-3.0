@@ -36,9 +36,10 @@ Who knows? You might _just_ survive...
 ### Tech stack
 
 - **Front-end:** [p5.js](https://p5js.org/) (canvas game, served as static files)
-- **Server:** [Express](https://expressjs.com/) (static hosting + two API endpoints)
-- **AI quiz:** [OpenAI](https://platform.openai.com/) or a local
-  [Ollama](https://ollama.com/) model via the `/submit` endpoint
+- **Server:** [Express](https://expressjs.com/) (static hosting + a few small API endpoints)
+- **AI quiz:** [OpenAI](https://platform.openai.com/), [Hugging Face](https://huggingface.co/),
+  or a local [Ollama](https://ollama.com/) model via the `/submit` endpoint —
+  players pick one (and bring their own key/token) at game start
 - **Voice:** [ElevenLabs](https://elevenlabs.io/) text-to-speech via the `/tts` endpoint
 - **Runtime:** Node.js 18+ (developed on Node 22)
 
@@ -57,14 +58,16 @@ npm start                 # or: npm run dev  (auto-reload via nodemon)
 
 Then open **http://localhost:3001** in your browser.
 
-> The game runs without API keys, but the **AI quiz** needs `OPENAI_API_KEY`
-> and **Eva's voice** needs `ELEVEN_LABS_API_KEY`. See `.env.example`.
+> The server runs without any API keys: players choose who runs the quiz AI at
+> game start (the **AI gate**) and bring their own OpenAI key / Hugging Face
+> token, or use local Ollama. Server-side keys are optional — **Eva's voice**
+> needs `ELEVEN_LABS_API_KEY`. See `.env.example`.
 
 ### Environment variables
 
 | Variable               | Required | Default                     | Purpose                                  |
 | ---------------------- | -------- | --------------------------- | ---------------------------------------- |
-| `OPENAI_API_KEY`       | Yes\*    | —                           | AI quiz conversation (`/submit`)         |
+| `OPENAI_API_KEY`       | No\*     | —                           | Optional server-side OpenAI key (players bring their own via the AI gate) |
 | `ELEVEN_LABS_API_KEY`  | No       | —                           | Eva's spoken voice / TTS (`/tts`)        |
 | `OPENAI_MODEL`         | No       | `gpt-4.1`                   | Chat model used for the quiz AI          |
 | `AI_PROVIDER`          | No       | `openai`                    | `openai` (ChatGPT), `local` (Ollama), or `hf` (Hugging Face) |
@@ -75,8 +78,8 @@ Then open **http://localhost:3001** in your browser.
 | `DEBUG_PASSWORD`       | No       | — (unset = disabled)        | Password for the `?debug` panel / provider switch |
 | `PORT`                 | No       | `3001`                      | Port the server listens on               |
 
-\*Required for the puzzle to function **unless you use a local model** (below);
-the rest of the game still loads without it.
+\*Only used as the fallback when a request doesn't carry a player key — e.g.
+the `?debug` empty-key convenience, or `AI_PROVIDER=openai` as server default.
 
 ### Running the quiz AI locally (no API credit needed)
 
@@ -118,6 +121,9 @@ Notes:
 
 ### How to play
 
+- On the title screen, the **first click opens the AI gate** — pick who runs
+  the quiz AI: ChatGPT (your own key), Hugging Face (free token), or local
+  Ollama. Your key stays in the tab and is never stored server-side.
 - **Click anywhere** to advance dialogue.
 - During a choice, **click an option** to pick it.
 - In the quiz, **type a question and press Enter** to interrogate Eva — solve the
@@ -134,7 +140,7 @@ specific scene without playing through everything.
 
 ```
 .
-├── index.js                # Express server: static hosting + /submit (OpenAI) + /tts (ElevenLabs)
+├── index.js                # Express server: static hosting + /submit (AI quiz) + /tts (ElevenLabs)
 ├── elevenlab.js            # ElevenLabs TTS helper
 ├── .env.example            # template for required environment variables
 └── public/                 # p5.js front-end (served statically)
@@ -152,6 +158,7 @@ specific scene without playing through everything.
     │   ├── QuizNotebook.js  # notebook quiz UI shell
     │   ├── QuizLog.js       # Q&A log page (input, paging, persistence)
     │   ├── EvaAI.js         # AI quiz conversation (calls /submit)
+    │   ├── AIGateOverlay.js # provider/key chooser shown at game start
     │   └── Dialog.js, AudioManager.js, TutorialOverlay.js,
     │       TagOverlayAnimator.js, Tween.js, Util.js     # supporting systems
     └── assets/             # art, audio, fonts
@@ -161,8 +168,8 @@ specific scene without playing through everything.
 A `SCENES` table maps each state to the manager that owns the screen for that
 frame (drawing, clicks, keys). The Day 1 narrative is a chain of `startD1*`
 functions that hand off via `dialog.onFinish` callbacks. The AI quiz lives in
-`EvaAI` (front-end) talking to the server's `/submit` (OpenAI) and `/tts`
-(ElevenLabs) endpoints.
+`EvaAI` (front-end) talking to the server's `/submit` (the AI provider chosen
+at the gate) and `/tts` (ElevenLabs) endpoints.
 
 ## License
 
