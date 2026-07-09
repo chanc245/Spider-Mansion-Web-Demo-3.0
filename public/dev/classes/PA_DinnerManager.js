@@ -30,13 +30,14 @@ class PA_DinnerManager {
   static TAG_H = 35;
   static PAD = 20;
   static ROW_Y = 480;
+  static OVERFLOW = 12; // web-strand bleed around the row (matches DIA_OPTION)
 
   // Hover dim swap crossfades (fast) instead of hard-switching.
   static DIM_FADE_MS = 120;
 
   // Web vision on hover — full-screen dim + animated radial web
   // (constants mirror PA_WebInvestigateManager).
-  static WEB_DIM_ALPHA = 140; // full-screen dim strength at full hover
+  static WEB_DIM_ALPHA = 95; // full-screen dim strength at full hover
   static WEB_ANIM_SPEED = 0.05; // web draw-on progress per frame
   static WEB_FADE_MS = 160; // dim+web fade in/out
 
@@ -71,7 +72,10 @@ class PA_DinnerManager {
   // Call during p5 preload. `charList` lets us preload every portrait
   // (normal + dim) so hover swaps never flash while lazy-loading.
   preload(charList = []) {
-    this._frameImg = loadImage("assets/ui/ui_dia_decor_frame_noName.png");
+    // Picker chrome uses the investigate frame; once a portrait is clicked the
+    // scene switches to DIA_VN, where Dialog draws its own frame per line
+    // (ui_dia_decor_frame_name / _noName depending on the line's charName).
+    this._frameImg = loadImage("assets/ui/ui_investigate_decor_frame.png");
     this._tagLeft = loadImage("assets/ui/ui_optionTag_Left.png");
     this._tagRight = loadImage("assets/ui/ui_optionTag_Right.png");
     this._font = loadFont("assets/fonts/Forum-Regular.ttf");
@@ -115,6 +119,19 @@ class PA_DinnerManager {
     const rowW = TAG_W + PAD + tw + PAD + TAG_W;
     this._returnRow = { x: (width - rowW) / 2, y: ROW_Y, w: rowW, h: TAG_H, tw };
 
+    // Hover web buffer for the return row — same incremental spiderweb the
+    // DIA_OPTION rows use. Reused across starts; recreated only if resized.
+    const OVERFLOW = PA_DinnerManager.OVERFLOW;
+    const bw = rowW + OVERFLOW * 2;
+    const bh = TAG_H + OVERFLOW * 2;
+    if (!this._retWebBuf || this._retWebBuf.width !== bw) {
+      this._retWebBuf?.remove?.();
+      this._retWebBuf = createGraphics(bw, bh);
+    } else {
+      this._retWebBuf.clear();
+    }
+    this._retWebProg = 0;
+
     this._hover = -1;
     this._hoverReturn = false;
     this._webA = 0;
@@ -154,6 +171,24 @@ class PA_DinnerManager {
     if (!this.active) return;
     this._hover = this._charAtMouse();
     this._hoverReturn = this._returnAtMouse();
+
+    // Return-row hover web — identical behavior to DIA_OPTION rows: strands
+    // accumulate in bursts while hovered, buffer clears when the mouse leaves.
+    // (_addWebStrands has no `this` dependencies, so borrow it directly.)
+    if (this._hoverReturn && this._retWebBuf) {
+      if (this._retWebProg < 800) {
+        const burst = this._retWebProg < 20 ? 12 : 24;
+        DIA_OptionManager.prototype._addWebStrands(
+          this._retWebBuf,
+          burst,
+          77.3 + this._retWebProg * 0.5,
+        );
+        this._retWebProg += burst;
+      }
+    } else if (this._retWebProg > 0) {
+      this._retWebBuf.clear();
+      this._retWebProg = 0;
+    }
 
     // Crossfade each portrait's dim art toward its hover state.
     const step = (deltaTime / PA_DinnerManager.DIM_FADE_MS) * 255;
@@ -227,6 +262,13 @@ class PA_DinnerManager {
     // "return to position" row
     const r = this._returnRow;
     if (r) {
+      if (this._retWebProg > 0 && this._retWebBuf) {
+        image(
+          this._retWebBuf,
+          r.x - PA_DinnerManager.OVERFLOW,
+          r.y - PA_DinnerManager.OVERFLOW,
+        );
+      }
       if (this._tagLeft) image(this._tagLeft, r.x, r.y, TAG_W, TAG_H);
       if (this._tagRight)
         image(this._tagRight, r.x + r.w - TAG_W, r.y, TAG_W, TAG_H);
