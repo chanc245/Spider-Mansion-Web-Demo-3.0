@@ -30,12 +30,16 @@
     }
   };
 
+  // Escalating prompts: polite → suspicious → (after the 3rd miss) told off.
+  const PW_PROMPTS = [
+    "debug panel password:",
+    "Wrong password — try again:",
+    "Did you have a typo? Or are you trying to guess the password?",
+  ];
   let dbgPw = sessionStorage.getItem("dbgPw") || "";
   let verdict = dbgPw ? await checkPw(dbgPw) : "bad";
-  for (let tries = 0; verdict === "bad" && tries < 3; tries++) {
-    const entered = window.prompt(
-      tries === 0 ? "debug panel password:" : "Wrong password — try again:",
-    );
+  for (let tries = 0; verdict === "bad" && tries < PW_PROMPTS.length; tries++) {
+    const entered = window.prompt(PW_PROMPTS[tries]);
     if (entered === null) return; // cancelled — no panel
     dbgPw = entered;
     verdict = await checkPw(dbgPw);
@@ -54,7 +58,9 @@
     return;
   }
   if (verdict !== "ok") {
-    alert("Debug panel: wrong password.");
+    alert(
+      "If you don't know the password, that probably means you shouldn't be on this page!",
+    );
     return;
   }
   sessionStorage.setItem("dbgPw", dbgPw);
