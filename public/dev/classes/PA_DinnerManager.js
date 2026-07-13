@@ -1,7 +1,8 @@
 // PA_DinnerManager.js (dev overlay)
 // Image-based dinner picker — replaces the old text-list version.
 //
-// Seven standing portraits (assets/dinner_char/ui_dinner_*.png, drawn 115x380)
+// Seven standing portraits (assets/dinner_char/ui_dinner_*.png, drawn at half
+// the PNG size — 115x380 for most, 125x380 for the decorated end portraits)
 // over the dining-room bg. Hovering one portrait triggers "web vision":
 // the whole screen dims, a full-screen spider web (ported from
 // PA_WebInvestigateManager) animates out from the hovered character, and every
@@ -19,7 +20,10 @@
 //   });
 
 class PA_DinnerManager {
-  // Portrait size fixed by the art (source PNGs are 230x760, drawn at half).
+  // Portrait size fixed by the art, drawn at half the PNG size. Most exports
+  // are 230x760 (drawn 115x380); the two end portraits carry side decoration
+  // and are 250x760 (drawn 125x380). Each portrait's width comes from its own
+  // PNG in start(); CHAR_W is only the fallback for a not-yet-loaded image.
   static CHAR_W = 115;
   static CHAR_H = 380;
   static CHAR_GAP = 0;
@@ -43,7 +47,7 @@ class PA_DinnerManager {
 
   constructor() {
     this.active = false;
-    this.characters = []; // { ref, img, imgDim, x, y, dimA }
+    this.characters = []; // { ref, img, imgDim, x, y, w, dimA }
     this.onPick = null;   // (characterRef) => {} — portrait clicked
     this.onFinish = null; // () => {} — "return to position" clicked
     this._hover = -1;     // hovered portrait index, -1 = none
@@ -99,16 +103,28 @@ class PA_DinnerManager {
     this._bgImg = this._img(opts.bg ?? "assets/bg/bg_pa_1f_Dining.png");
 
     const chars = opts.characters ?? [];
-    const totalW = chars.length * CHAR_W + (chars.length - 1) * CHAR_GAP;
+    // Per-portrait width from the art itself (PNGs drawn at half size), so the
+    // wider decorated end portraits get their extra width without touching the
+    // others. Portraits are loaded in preload(), so width is known here.
+    const imgs = chars.map((c) => this._img(c.img));
+    const widths = imgs.map((im) => (im?.width > 1 ? im.width / 2 : CHAR_W));
+    const totalW =
+      widths.reduce((sum, w) => sum + w, 0) + (chars.length - 1) * CHAR_GAP;
     const startX = (width - totalW) / 2;
-    this.characters = chars.map((c, i) => ({
-      ref: c,
-      img: this._img(c.img),
-      imgDim: this._img(c.imgDim),
-      x: startX + i * (CHAR_W + CHAR_GAP),
-      y: CHAR_Y,
-      dimA: 0, // dim-art alpha 0..255, tweened toward hover state
-    }));
+    let x = startX;
+    this.characters = chars.map((c, i) => {
+      const entry = {
+        ref: c,
+        img: imgs[i],
+        imgDim: this._img(c.imgDim),
+        x,
+        y: CHAR_Y,
+        w: widths[i],
+        dimA: 0, // dim-art alpha 0..255, tweened toward hover state
+      };
+      x += widths[i] + CHAR_GAP;
+      return entry;
+    });
 
     // "return to position" row, centered like a DIA_OPTION row.
     push();
@@ -142,12 +158,12 @@ class PA_DinnerManager {
   // Hit tests read mouseX/mouseY directly so update() (hover art) and
   // mousePressed() (clicks) can never disagree within a frame.
   _charAtMouse() {
-    const { CHAR_W, CHAR_H } = PA_DinnerManager;
+    const { CHAR_H } = PA_DinnerManager;
     for (let i = 0; i < this.characters.length; i++) {
       const ch = this.characters[i];
       if (
         mouseX >= ch.x &&
-        mouseX <= ch.x + CHAR_W &&
+        mouseX <= ch.x + ch.w &&
         mouseY >= ch.y &&
         mouseY <= ch.y + CHAR_H
       )
@@ -206,7 +222,7 @@ class PA_DinnerManager {
         this._webHover = this._hover;
         const ch = this.characters[this._hover];
         this._generateWeb(
-          ch.x + PA_DinnerManager.CHAR_W * (2 / 3),
+          ch.x + ch.w * (2 / 3),
           ch.y + PA_DinnerManager.CHAR_H * 0.32,
         );
       }
@@ -287,16 +303,16 @@ class PA_DinnerManager {
   // p5 pushes every image() through an offscreen tint-canvas (even at alpha
   // 255), which would tax all seven portraits every idle frame.
   _drawPortrait(ch) {
-    const { CHAR_W, CHAR_H } = PA_DinnerManager;
+    const { CHAR_H } = PA_DinnerManager;
     const ctx = drawingContext;
     const prevA = ctx.globalAlpha;
     if (ch.img && ch.dimA < 255) {
       ctx.globalAlpha = prevA * ((255 - ch.dimA) / 255);
-      image(ch.img, ch.x, ch.y, CHAR_W, CHAR_H);
+      image(ch.img, ch.x, ch.y, ch.w, CHAR_H);
     }
     if (ch.imgDim && ch.dimA > 0) {
       ctx.globalAlpha = prevA * (ch.dimA / 255);
-      image(ch.imgDim, ch.x, ch.y, CHAR_W, CHAR_H);
+      image(ch.imgDim, ch.x, ch.y, ch.w, CHAR_H);
     }
     ctx.globalAlpha = prevA;
   }
