@@ -513,6 +513,39 @@
       .catch(() => (modelEl.textContent = "model: (server offline?)"));
   }
 
+  // ── VN auto-advance toggle ───────────────────────────────────────
+  // Off by default (every load starts with click-to-advance). While on, a line
+  // moves to the next one on its own once it has finished typing AND its
+  // voiceover has run out; clicking still advances immediately.
+  {
+    const AUTO_MS = 1200;
+    const sec = document.createElement("div");
+    sec.className = "dbg-sec";
+    const lbl = document.createElement("span");
+    lbl.className = "lbl";
+    lbl.textContent = "VN playback";
+    sec.appendChild(lbl);
+
+    const grid = document.createElement("div");
+    grid.className = "dbg-grid";
+    const b = document.createElement("button");
+    b.textContent = `⏩ auto-advance (${AUTO_MS / 1000}s)`;
+    b.title = "Advance each line by itself once it's done typing/speaking";
+    const setAuto = (on) => {
+      call("auto-advance", () => {
+        dialog.autoAdvanceMs = on ? AUTO_MS : 0;
+        b.classList.toggle("active", on);
+      });
+    };
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setAuto(!b.classList.contains("active"));
+    });
+    grid.appendChild(b);
+    sec.appendChild(grid);
+    body.appendChild(sec);
+  }
+
   // Day 1 split into its two halves — PA (day part) and PR (night part) —
   // each its own collapsible group; Day 0 starts collapsed.
   const day1PA = day1Flow.filter(([label]) => label.includes("PA-"));

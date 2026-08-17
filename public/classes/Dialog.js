@@ -98,6 +98,13 @@ class Dialog {
     this._uiOnlyFade = false;
     this._holdBgUntil = 0;
 
+    // Auto-advance (opt-in — 0 means the player clicks through as usual).
+    // Once a line has fully typed AND its voiceover has finished, wait this
+    // many ms and move on by itself. Clicking still works and just gets there
+    // sooner. Option lines never auto-advance — the player has to choose.
+    this.autoAdvanceMs = opts.autoAdvanceMs ?? 0;
+    this._autoAt = 0; // 0 = not armed yet, -1 = suppressed for this line
+
     // Script/state
     this.script = [];
     this.index = 0;
@@ -188,6 +195,7 @@ class Dialog {
     this.typer.update();
     this.arrow.setEnabled(!this.typer.typing);
     this.arrow.update();
+    this._updateAutoAdvance();
 
     if (this._fadingOut && !this._uiFade.active && this.alpha <= 1) {
       this._fadingOut = false;
@@ -392,7 +400,37 @@ class Dialog {
   }
 
   // —— internals ——
+
+  // Arms once the line has finished typing and its voiceover (if any) has run
+  // out, then advances after autoAdvanceMs. Re-arms from scratch whenever the
+  // line starts talking again, so a click-to-reveal mid-line still gets the
+  // full pause afterwards.
+  _updateAutoAdvance() {
+    if (!this.autoAdvanceMs || !this._running || this._fadingOut) return;
+    if (this._autoAt < 0) return; // option line — wait for the player
+    if (this.typer.typing || this._isDiaAudioPlaying()) {
+      this._autoAt = 0;
+      return;
+    }
+    if (!this._autoAt) {
+      this._autoAt = millis() + this.autoAdvanceMs;
+      return;
+    }
+    if (millis() >= this._autoAt) {
+      this._autoAt = 0;
+      this.next(); // same path as a click, click SFX included
+    }
+  }
+
+  _isDiaAudioPlaying() {
+    const a = this._diaAudioEl;
+    return !!(a && !a.paused && !a.ended);
+  }
+
   _applyLine(line) {
+    // Fresh line — re-arm auto-advance (option lines never advance on their own)
+    this._autoAt = line.option ? -1 : 0;
+
     // Option line — pause VN and hand off to onOption handler
     if (line.option) {
       if (typeof this.onOption === "function") {
