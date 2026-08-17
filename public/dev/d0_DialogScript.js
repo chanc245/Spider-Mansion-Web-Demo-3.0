@@ -271,6 +271,38 @@ const d0_vnScript = [
     text: "The door creaked open slightly. I took a deep breath and carefully pushed the door open further to step inside.",
     soundEffect: "assets/audio/sfx/dia_door.mp3",
   },
+  // Portrait wall — one CG per family member, then back to the hallway.
+  {
+    charName: " ",
+    bg: "assets/bg/bg_pr_1f_PortraitHallway.png",
+    text: "I wonder around the hallway a little bit and found this wall full of Portraits:",
+  },
+  {
+    charName: " ",
+    bg: "assets/cg/portrait/cg_portrait_VonSilkenFamily.png",
+    text: "This is the family portrait of the Von Silken family…",
+  },
+  {
+    charName: " ",
+    bg: "assets/cg/portrait/cg_portrait_Eva.png",
+    text: "Evelynna Von Silken, I think this might be the little girl that needs a nanny.",
+  },
+  {
+    charName: " ",
+    bg: "assets/cg/portrait/cg_portrait_Lucius.png",
+    text: "Lucius Leopold Von Silken, the master of this mansion. I can check this dignification even in the portrait.",
+  },
+  {
+    charName: " ",
+    bg: "assets/cg/portrait/cg_portrait_Rosa.png",
+    text: "Rosalind Von Silken, She is the lady master, the first wife of the master. She seem to be not love the master too much.",
+  },
+  {
+    charName: " ",
+    bg: "assets/cg/portrait/cg_portrait_Emme.png",
+    text: "Emmeline Thornwood, She is the mistress, second wife of the master. Eva’s mom",
+  },
+    // END Portrait wall — one CG per family member, then back to the hallway.
   {
     charName: " ",
     bg: "assets/bg/bg_pr_1f_PortraitHallway.png",
