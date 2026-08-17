@@ -89,6 +89,10 @@ function preload() {
   audioMgr.load("assets/audio/bgm/bg_ara.mp3", { loop: true, volume: 0.3, exclusive: true });
   // Day 1 music box — looping BGM for the night music search + the quiz.
   audioMgr.load("assets/audio/bgm/bg_ara_short.mp3", { loop: true, volume: 0.3, exclusive: true });
+  // Eva's room BGM — registered here only to pin its volume (unregistered
+  // tracks default to 1.0, which made this one drown everything out); the
+  // script line that starts it sets its own loop.
+  audioMgr.load("assets/audio/bgm/bg_eva.mp3", { volume: 0.1 });
   // Day 1 quiz reading — Eva/Ara reads the puzzle aloud when the quiz opens.
   // Same volume (0.3) as the other voiceovers + BGM.
   audioMgr.load("assets/audio/voice/d1_dia/d1_dia_quizRead.mp3", { volume: 0.3 });
