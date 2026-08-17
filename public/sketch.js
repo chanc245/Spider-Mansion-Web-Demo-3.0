@@ -180,7 +180,7 @@ function preload() {
   dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Dining.png"); // dinner talk
   // Music search — preload every room bg the picker can show, so switching rooms
   // doesn't flash black while the option manager lazy-loads an uncached image.
-  dia_optionMgr.preloadBg("assets/bg/bg_pr_ug_room1_Nanny.png");   // start (your room)
+  dia_optionMgr.preloadBg("assets/bg/bg_BlackOut.png");            // start (dark)
   dia_optionMgr.preloadBg("assets/bg/bg_pa_1f_Kitchen.png");       // Kitchen
   dia_optionMgr.preloadBg("assets/bg/bg_pr_3f_Attic.png");         // Attic
   dia_optionMgr.preloadBg("assets/bg/bg_pr_1f_Dining.png");        // Dining Room
@@ -498,9 +498,9 @@ function startD1Night() {
 // correct room is chosen. Wrong picks show their result in the VN dialogue box,
 // then re-offer the rooms.
 function startD1MusicSearch(currentBg) {
-  // The search starts in the nanny's room; afterwards the background stays on
-  // whichever room the player last stepped into (passed back as currentBg).
-  const START_BG   = "assets/bg/bg_pr_ug_room1_Nanny.png";
+  // The search starts on black; afterwards the background stays on whichever
+  // room the player last stepped into (passed back as currentBg).
+  const START_BG   = "assets/bg/bg_BlackOut.png";
   const STEP_SFX    = "assets/audio/sfx/dia_step.mp3";
   const WRONG_TEXT  = "You don't hear any sound here.";
   const bg = currentBg || START_BG;
