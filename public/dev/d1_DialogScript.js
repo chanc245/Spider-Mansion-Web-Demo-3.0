@@ -15,6 +15,7 @@ loopSound — when true, the line's soundEffect loops until stopped (default one
 stopSound — stops a sound; can be a path string or { path, fadeMs }
 fadeSoundMs — fade duration in ms when used alongside stopSound
 diaAudio — voiceover file for this line (plays on the isolated private channel)
+diaAudioVolume — 0..1 override for THIS line's voiceover (default: dialog-wide 0.3)
 
 BRANCHING
 option.branchId — when set, sketch.js handles routing instead of resumeFromOption()
@@ -735,6 +736,19 @@ const d1_vnScript_night_dining = [
     charName: " ",
     // charCG: "assets/charImg/char_ara_smiling.png",
     text: "You briefly recall the promise made last night.",
+  },
+  {
+    charName: "Eva",
+    // Camera already sits on Eva from the line above; re-asserted so the long CG
+    // stays in scroll mode.
+    bg: "assets/quiz/bg_quiz_day1_dinningRoom.png",
+    bgTall: true,
+    bgPan: "top",
+    text: "Also, since you're no longer new to this game, you'll have fewer chances to guess the right answer! Here's today's question --",
+    diaAudio: "d1_dia_04b.mp3",
+    // This render came out quieter than the rest of the voice lines, so it
+    // plays at full volume instead of the usual 0.3.
+    diaAudioVolume: 1,
   },
   // sketch.js starts D1_QUIZ when this script finishes
 ];
