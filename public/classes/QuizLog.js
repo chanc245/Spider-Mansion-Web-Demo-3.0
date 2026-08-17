@@ -79,6 +79,15 @@ class QuizLog {
     // Wrap cache
     this._wrapped = [];
     this._wrapVersion = -1; // tracks notebookContent.length
+
+    // Indices into notebookContent, both preserved by the saved Day 0 log
+    // (which is notebookContent verbatim):
+    //   question → the one paragraph whose sentences are spaced by a half line
+    //   bold     → the "Day N - Question:" heading, drawn with a faux bold
+    this._questionParaIdx = 1;
+    this._boldParaIdx = 0;
+    this.boldStrokeWeight = 0.5;
+    this.headingFontSize = 24; // heading only; everything else uses fontSize
   }
 
   preload() {
@@ -109,7 +118,7 @@ class QuizLog {
       `${dayLabel} - Question:`,
       this.eva.setup,
       this._dayKey === "day0" ? "Who am I?" : "What happened?",
-      "*********** QnA Log ***********",
+      "************* Log *************",
     ];
     // Input
     this.input = createInput("");
@@ -355,7 +364,7 @@ class QuizLog {
     this._drawColumns(curPageLines, this.alpha);
 
     // input position
-    if (this._canShowInputThisPage()) this._positionInput(curPageLines.length);
+    if (this._canShowInputThisPage()) this._positionInput(curPageLines);
     else if (this.input) this.input.hide();
 
     // nav buttons
@@ -436,34 +445,52 @@ class QuizLog {
     push();
     noStroke();
     fill(0, 0, 0, alpha);
-    for (let i = 0; i < max; i++) {
-      text(lines[i], x, y + i * this.leading, w, this.leading);
+    strokeJoin(ROUND);
+    let dy = 0;
+    // The notebook font only ships in one weight and p5 ignores textStyle(BOLD)
+    // for fonts loaded with loadFont, so "bold" is faked by stroking the glyphs
+    // in their own colour.
+    const setBold = (on) => {
+      if (!on) return noStroke();
+      stroke(0, 0, 0, alpha);
+      strokeWeight(this.boldStrokeWeight);
+    };
+    for (const ln of lines.slice(0, max)) {
+      setBold(ln.bold);
+      textSize(ln.fs); // rows carry their own size (the heading is larger)
+      text(ln.t, x, y + dy, w, this.leading);
+      dy += ln.hf * this.leading;
     }
     pop();
   }
 
-  _positionInput(usedLines) {
+  // pageLines: the wrapped rows already drawn on this page ([{ t, hf }]).
+  // The input sits right under the last row of whichever column it lands in,
+  // so its offset is the summed row heights — not usedLines * leading.
+  _positionInput(pageLines) {
     const cap = this._maxLinesPerBox;
+    const usedLines = pageLines.length;
     if (usedLines >= cap * 2) {
       this.input.hide();
       return;
     }
 
-    let boxX, boxY, boxW, row;
+    let boxX, boxY, boxW, colLines;
     if (usedLines < cap) {
-      row = usedLines;
+      colLines = pageLines;
       boxX = this.anchorX + this.x1;
       boxY = this.anchorY + this.y1;
       boxW = this.w1;
     } else {
-      row = usedLines - cap;
+      colLines = pageLines.slice(cap);
       boxX = this.anchorX + this.x2;
       boxY = this.anchorY + this.y2;
       boxW = this.w2;
     }
+    const colH = colLines.reduce((sum, ln) => sum + ln.hf * this.leading, 0);
 
     const w = boxW - 2 * this.inputPaddingX + 15;
-    const y = boxY + row * this.leading + (this.leading - this.inputH) / 2;
+    const y = boxY + colH + (this.leading - this.inputH) / 2;
     const x = boxX + this.inputPaddingX;
 
     this.input.show();
@@ -524,35 +551,58 @@ class QuizLog {
     pop();
   }
 
+  // → [{ t, hf, bold, fs }] where hf is the row's height as a fraction of
+  // this.leading and fs its font size. Paging and column packing still count
+  // every entry as one row, so a half spacer just leaves a little slack at the
+  // bottom of the page — never an overflow.
   _wrapParagraphs(paragraphs, maxWidth) {
     if (this.userFont) textFont(this.userFont);
-    textSize(this.fontSize);
     const out = [];
-    for (const para of paragraphs) {
+    const add = (t, hf = 1, bold = false, fs = this.fontSize) =>
+      out.push({ t, hf, bold, fs });
+    paragraphs.forEach((para, pIdx) => {
+      // Only the question paragraph gets a gap between its sentences (half a
+      // line). The Q&A log lines run with no spacer at all.
+      const spacerHf = pIdx === this._questionParaIdx ? 0.5 : 0;
+      // Bold rows: the "Day N - Question:" heading, and every player entry —
+      // those open with "Qn:" — label and typed question alike.
+      const heading = pIdx === this._boldParaIdx;
+      const bold = heading || /^Q\d+:/.test(String(para).trim());
+      // The heading is set larger, so measure this paragraph at its own size —
+      // textWidth() below reads whatever textSize() is current.
+      const fs = heading ? this.headingFontSize : this.fontSize;
+      textSize(fs);
       // Break each paragraph after every full stop so each sentence starts on
       // its own line. Split only when "." is followed by whitespace (keeps the
       // period, and leaves decimals / "Q1:" style entries untouched).
       const sentences = String(para)
         .split(/(?<=\.)\s+/)
         .filter((s) => s.length);
-      for (const sentence of sentences) {
-        const words = sentence.split(/\s+/);
-        let line = "";
-        for (const word of words) {
-          const test = line ? line + " " + word : word;
-          if (textWidth(test) <= maxWidth) line = test;
-          else {
-            if (line) out.push(line);
-            if (textWidth(word) > maxWidth) {
-              for (const chunk of this._hardBreakWord(word, maxWidth))
-                out.push(chunk);
-              line = out.pop();
-            } else line = word;
-          }
-        }
-        if (line) out.push(line); // flush → next sentence begins on a new line
+      sentences.forEach((sentence, i) => {
+        if (i > 0 && spacerHf) add("", spacerHf); // spacer row between sentences
+        for (const line of this._wrapSentence(sentence, maxWidth))
+          add(line, 1, bold, fs);
+      });
+    });
+    return out;
+  }
+
+  _wrapSentence(sentence, maxWidth) {
+    const out = [];
+    let line = "";
+    for (const word of sentence.split(/\s+/)) {
+      const test = line ? line + " " + word : word;
+      if (textWidth(test) <= maxWidth) line = test;
+      else {
+        if (line) out.push(line);
+        if (textWidth(word) > maxWidth) {
+          for (const chunk of this._hardBreakWord(word, maxWidth))
+            out.push(chunk);
+          line = out.pop();
+        } else line = word;
       }
     }
+    if (line) out.push(line);
     return out;
   }
 
