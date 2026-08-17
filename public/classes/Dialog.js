@@ -472,7 +472,7 @@ class Dialog {
     if (line.stopSound) this._stopSoundLine(line);
     if (line.soundEffect && this.audio)
       this.audio.play(line.soundEffect, { loop: !!line.loopSound });
-    this._playDiaAudio(line.diaAudio ?? null);
+    this._playDiaAudio(line.diaAudio ?? null, line.diaAudioVolume);
 
     const hadCG = !!this.cg.curPath;
     if (!line.charCG) {
@@ -518,7 +518,9 @@ class Dialog {
     this.arrow.setEnabled(!this.typer.typing);
   }
 
-  _playDiaAudio(path) {
+  // volume — optional per-line override (line.diaAudioVolume). Without it the
+  // dialog-wide diaAudioVolume applies, as it does for every other voice line.
+  _playDiaAudio(path, volume) {
     this._stopDiaAudio();
     if (!path) return;
     // files live in per-day subfolders (e.g. d1_dia/d1_dia_01.mp3),
@@ -526,13 +528,14 @@ class Dialog {
     const m = path.match(/^(d\d+_dia)_/);
     const sub = m ? m[1] + "/" : "";
     const fullPath = this.diaAudioDir + sub + path;
+    const vol = typeof volume === "number" ? volume : this.diaAudioVolume;
     try {
       if (this._diaAudioPath !== fullPath) {
         this._diaAudioEl = new Audio(fullPath);
         this._diaAudioPath = fullPath;
       }
       this._diaAudioEl.currentTime = 0;
-      this._diaAudioEl.volume = Math.max(0, Math.min(1, this.diaAudioVolume));
+      this._diaAudioEl.volume = Math.max(0, Math.min(1, vol));
       this._diaAudioEl.play().catch(() => {});
     } catch (_) {}
   }
